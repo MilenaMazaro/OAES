@@ -1,12 +1,13 @@
-
 FROM php:5.6-apache
 
-COPY . /var/www/html/
+# (Opcional) habilite o rewrite se usar .htaccess
+RUN a2enmod rewrite
 
-RUN a2enmod rewrite headers
+WORKDIR /var/www/html
+COPY . .
 
-ENV TZ=America/Sao_Paulo
+# Entrypoint que ajusta a porta e inicia o Apache
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-EXPOSE 80
-
-CMD ["apache2-foreground"]
+CMD ["docker-entrypoint.sh"]
