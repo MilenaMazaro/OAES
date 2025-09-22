@@ -1,16 +1,20 @@
 #!/usr/bin/env bash
 set -e
 
-# Porta definida pelo Render. Se rodar localmente, usa 8080.
-PORT="${PORT:-8080}"
+PORT_TO_USE="${PORT:-8080}"
 
-# Faz o Apache ouvir na porta informada
-sed -ri "s/Listen 80/Listen ${PORT}/" /etc/apache2/ports.conf || true
-sed -ri "s/:80>/:${PORT}>/" /etc/apache2/sites-available/000-default.conf || true
-sed -ri "s/:80>/:${PORT}>/" /etc/apache2/sites-enabled/000-default.conf  || true
+# Troca a porta 80 -> $PORT em ports.conf
+if grep -qE '^Listen 80$' /etc/apache2/ports.conf ; then
+  sed -ri "s/^Listen 80$/Listen ${PORT_TO_USE}/" /etc/apache2/ports.conf
+fi
 
-# (Opcional) ativar mod_rewrite
-a2enmod rewrite >/dev/null 2>&1 || true
+# Troca a porta no VirtualHost default
+if grep -q "<VirtualHost *:80>" /etc/apache2/sites-available/000-default.conf ; then
+  sed -ri "s#<VirtualHost \*:80>#<VirtualHost *:${PORT_TO_USE}>#" /etc/apache2/sites-available/000-default.conf
+fi
 
-# Sobe o Apache em foreground (modo correto para containers)
+# (Opcional) permitir .htaccess
+# sed -ri 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
+
+# Sobe o Apache em foreground
 exec apache2-foreground
