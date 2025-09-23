@@ -1,0 +1,17 @@
+[
+  {"id":"FLOW_AVG_SPEED","label":"Velocidade Média","unit":"km/h","source":"FLOW"},
+  {"id":"FLOW_TRAVEL_TIME","label":"Tempo Médio de Travessia","unit":"min","source":"FLOW"},
+  {"id":"FLOW_SLOW_EVENTS","label":"Eventos de Lentidão","unit":"count","source":"FLOW"},
+  {"id":"FLOW_SLOW_DURATION","label":"Duração Média da Lentidão","unit":"min","source":"FLOW"},
+  {"id":"FLOW_CONGESTION_INDEX","label":"Índice de Congestionamento","unit":"%","source":"FLOW"},
+
+  {"id":"INC_ACCIDENTS","label":"Acidentes","unit":"count","source":"INCIDENT"},
+  {"id":"INC_STOPPED_LANE","label":"Parados na Via","unit":"count","source":"INCIDENT"},
+  {"id":"INC_STOPPED_SHOULDER","label":"Parados no Acostamento","unit":"count","source":"INCIDENT"},
+  {"id":"INC_POTHOLES","label":"Buracos","unit":"count","source":"INCIDENT"},
+  {"id":"INC_FLOOD","label":"Alagamentos","unit":"count","source":"INCIDENT"},
+  {"id":"INC_OTHER_HAZARDS","label":"Outros Perigos","unit":"count","source":"INCIDENT"},
+
+  {"id":"ASSET_CAM_COUNT","label":"Câmeras Associadas","unit":"count","source":"ASSET"},
+  {"id":"ASSET_CAM_UPTIME","label":"Câmeras Online","unit":"%","source":"ASSET"}
+]

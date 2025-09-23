@@ -1,0 +1,7 @@
+[
+  {"id":"ponte","name":"Ponte","description":"Estrutura que transpõe cursos d'água."},
+  {"id":"viaduto","name":"Viaduto","description":"Estrutura que transpõe outras vias, vales ou áreas urbanas."},
+  {"id":"tunel","name":"Túnel","description":"Passagem subterrânea para veículos."},
+  {"id":"passarela","name":"Passarela","description":"Estrutura elevada para pedestres."},
+  {"id":"trincheira","name":"Trincheira / Passagem Inferior","description":"Via que passa por baixo de outra."}
+]

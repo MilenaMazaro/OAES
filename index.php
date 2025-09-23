@@ -1,4 +1,4 @@
-<?php /* SIIM • OAEs + Alertas • Barra lateral fixa (direita) com slide suave e conteúdo interno */ ?>
+<?php /* SIIM • OAEs + Alertas • Painel direito único (OAEs/Indicadores) */ ?>
 <!doctype html>
 <html lang="pt-br">
 <head>
@@ -13,7 +13,7 @@
         html,body{ height:100%; }
         body{ overflow:hidden; background:#f6f7fb; }
 
-        /* ===== NAVBAR ===== */
+        /* NAVBAR */
         .navbar-green{ background:#3F5660 !important; }
         .navbar-green .navbar-brand{ color:#fff; }
         .navbar-green .btn-outline-light{ color:#fff; border-color:#fff; }
@@ -29,63 +29,44 @@
 
         #map{ height:calc(100vh - var(--nav-h)); }
 
-        /* ===== RIGHT SHELL (barra + painel) ===== */
+        /* RIGHT SHELL (trilho + painel) */
         .right-shell{
-            position:absolute; z-index:1000;
-            top:var(--nav-h); right:0; height:calc(100vh - var(--nav-h));
-            display:flex; flex-direction:row-reverse;
-            pointer-events:none;               /* não bloquear o mapa quando fechado */
+            position:absolute; z-index:1000; top:var(--nav-h); right:0; height:calc(100vh - var(--nav-h));
+            display:flex; flex-direction:row-reverse; pointer-events:none;
         }
         .rail{
-            width:var(--rail-w); height:100%;
-            background:var(--rail-bg);
+            width:var(--rail-w); height:100%; background:var(--rail-bg);
             display:flex; flex-direction:column; align-items:center; gap:.75rem;
-            padding:.75rem .5rem;
-            box-shadow:-2px 0 8px rgba(0,0,0,.18);
-            pointer-events:auto;               /* clicável */
-            border-left:0; border-radius:0;    /* bordas QUADRADAS */
+            padding:.75rem .5rem; box-shadow:-2px 0 8px rgba(0,0,0,.18);
+            pointer-events:auto; border-left:0; border-radius:0;
         }
         .rail .rail-btn{
-            width:44px; height:44px; border:0; border-radius:10px;
-            display:flex; align-items:center; justify-content:center;
-            background:#4c6570; color:#fff; font-size:1.25rem;
-            transition:transform .15s ease, background .2s ease;
+            width:44px; height:44px; border:0; border-radius:10px; display:flex; align-items:center; justify-content:center;
+            background:#4c6570; color:#fff; font-size:1.25rem; transition:transform .15s ease, background .2s ease;
         }
         .rail .rail-btn:hover{ background:#5a7683; transform:translateY(-1px); }
         .rail .rail-btn.primary{ background:#0b8c7d; }
         .rail .rail-btn.primary:hover{ background:#0aa08f; }
 
-        /* painel branco que desliza */
         .sidepanel{
-            width:0; height:100%; overflow:hidden;
-            background:#fff; border-left:1px solid rgba(0,0,0,.1);
-            box-shadow:-10px 0 18px rgba(0,0,0,.12);
-            pointer-events:auto;
-            transition:width .35s cubic-bezier(.22,.61,.36,1); /* SUAVE */
+            width:0; height:100%; overflow:hidden; background:#fff; border-left:1px solid rgba(0,0,0,.1);
+            box-shadow:-10px 0 18px rgba(0,0,0,.12); pointer-events:auto; transition:width .35s cubic-bezier(.22,.61,.36,1);
         }
         .right-shell.open .sidepanel{ width:var(--panel-w); }
         @media(max-width:540px){ .right-shell.open .sidepanel{ width:min(95vw, var(--panel-w)); } }
 
-        /* fade do conteúdo interno durante o slide */
         .sp-body{ opacity:0; transition:opacity .25s .12s ease; height:100%; overflow:auto; }
         .right-shell.open .sp-body{ opacity:1; }
 
-        /* header do painel */
         .sp-header{
             display:flex; align-items:center; justify-content:space-between;
-            padding:.6rem .85rem; border-bottom:1px solid rgba(0,0,0,.08);
-            background:#f9fafb;
+            padding:.6rem .85rem; border-bottom:1px solid rgba(0,0,0,.08); background:#f9fafb;
         }
         .sp-header .title{ font-weight:600; }
 
-        /* ===== componentes já existentes ===== */
-        .chips-control{
-            display:flex; align-items:center; flex-wrap:wrap; gap:.25rem;
-            width:100%; min-height:38px; padding:.25rem .5rem;
-            background:#fff; border:1px solid #ced4da; border-radius:.375rem;
-        }
-        .chip{ display:inline-flex; align-items:center; gap:.35rem; background:#e9f2ff; color:#0b5ed7;
-            border:1px solid #cfe2ff; padding:.15rem .5rem; border-radius:999px; font-size:.85rem; }
+        /* Componentes */
+        .chips-control{ display:flex; align-items:center; flex-wrap:wrap; gap:.25rem; width:100%; min-height:38px; padding:.25rem .5rem; background:#fff; border:1px solid #ced4da; border-radius:.375rem; }
+        .chip{ display:inline-flex; align-items:center; gap:.35rem; background:#e9f2ff; color:#0b5ed7; border:1px solid #cfe2ff; padding:.15rem .5rem; border-radius:999px; font-size:.85rem; }
         .chip .x{ cursor:pointer; font-weight:700; line-height:1; }
         .chips-input{ flex:1 1 140px; min-width:120px; border:0; outline:0; height:30px; }
 
@@ -94,9 +75,7 @@
 
         .alerts-grid{ display:grid; grid-template-columns:1fr 1fr; gap:.5rem; }
         @media(max-width:480px){ .alerts-grid{ grid-template-columns:1fr; } }
-        .alert-card{ border:0; border-radius:.55rem; display:flex; flex-direction:column;
-            align-items:flex-start; justify-content:space-between;
-            padding:.55rem .6rem; min-height:92px; box-shadow:0 2px 10px rgba(0,0,0,.08); }
+        .alert-card{ border:0; border-radius:.55rem; display:flex; flex-direction:column; align-items:flex-start; justify-content:space-between; padding:.55rem .6rem; min-height:92px; box-shadow:0 2px 10px rgba(0,0,0,.08); }
         .alert-title{ display:flex; align-items:center; gap:.35rem; font-weight:600; font-size:.85rem; color:#111; }
         .alert-ico{ font-size:1.05rem; line-height:1; color:#111; }
         .alert-count{ font-size:1.15rem; font-weight:800; color:#111; }
@@ -107,11 +86,22 @@
         .card-jam{ background:#42a5f5; color:#111; }
         .card-roadclosed{ background:#c62828; color:#111; }
 
-        /* desabilitar conteúdo quando OAEs ocultas */
         .sidepanel.disabled .sp-body{ opacity:.45; pointer-events:none; }
 
-        /* ícone do botão de abrir/fechar gira */
         .right-shell.open #btn-toggle i{ transform:rotate(180deg); transition:transform .25s ease; }
+
+        /* Pills coloridas dos níveis */
+        .badge-traffic{ font-weight:700; border-radius:999px; padding:.25rem .5rem; min-width:72px; display:inline-block; text-align:center; color:#111; }
+        .badge-t1{ background:#a5d6a7; }  /* verde claro */
+        .badge-t2{ background:#ffe082; }  /* amarelo */
+        .badge-t3{ background:#ffcc80; }  /* laranja */
+        .badge-t4{ background:#ef9a9a; }  /* vermelho claro */
+        .badge-t5{ background:#ffab91; }  /* vermelho escuro */
+        /* espaço extra no fim do painel em telas menores */
+        .sp-body .panel-pad{ height:20px; }
+        @media (max-height: 740px){
+            .sp-body .panel-pad{ height:60px; }
+        }
     </style>
 </head>
 <body>
@@ -135,107 +125,122 @@
 <!-- MAPA -->
 <div id="map"></div>
 
-<!-- ===== BARRA LATERAL FIXA ===== -->
+<!-- RIGHT SHELL -->
 <div id="right-shell" class="right-shell">
-    <!-- Painel que desliza -->
+    <!-- Painel deslizante único -->
     <aside id="sidepanel" class="sidepanel">
         <div class="sp-header">
-            <span class="title">Obras de Arte Especiais (OAEs)</span>
-            <div class="d-flex gap-2">
+            <span id="sp-title" class="title">Obras de Arte Especiais (OAEs)</span>
+            <div id="sp-actions" class="d-flex gap-2">
+                <!-- actions são trocadas pela aba atual -->
                 <button id="btn-clear-filter" class="btn btn-outline-secondary btn-sm">Limpar Filtro</button>
             </div>
         </div>
+
         <div class="sp-body p-3">
-            <div class="small text-muted mb-2">Selecione uma ou mais OAEs para filtrar os alertas do Waze em um raio de 500m.</div>
-
-            <!-- Campo único: tags + sugestões -->
-            <div class="mb-3">
-                <div id="oae-ms" class="chips-control">
-                    <div id="oae-chips"></div>
-                    <input id="oae-input" class="chips-input" placeholder="Digite para buscar uma OAE..." list="oaes-list" autocomplete="off">
-                    <datalist id="oaes-list"></datalist>
+            <!-- ABA OAEs -->
+            <div id="panel-oae">
+                <div class="small text-muted mb-2">
+                    Selecione uma ou mais OAEs para filtrar os alertas do Waze em um raio de 500m.
                 </div>
-            </div>
 
-            <!-- Tipos + colapso -->
-            <div class="d-flex align-items-center justify-content-between mb-2">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="text-muted">Tipos:</span>
-                    <button id="btn-all" type="button" class="btn btn-sm btn-primary">Todos</button>
-                    <button id="btn-none" type="button" class="btn btn-sm btn-outline-secondary">Nenhum</button>
-                </div>
-                <button class="btn btn-sm btn-outline-dark" data-bs-toggle="collapse" data-bs-target="#typesBox" aria-expanded="false" aria-controls="typesBox">
-                    Mostrar tipos <span id="types-badge" class="badge text-bg-secondary ms-1">0</span>
-                </button>
-            </div>
-
-            <div id="typesBox" class="collapse">
-                <div id="oae-types" class="d-grid gap-2 mb-3"></div>
-            </div>
-
-            <!-- Cards de Alertas -->
-            <div id="alerts-summary" class="mb-3 d-none">
-                <h6 class="mb-2">Alertas</h6>
-                <div class="alerts-grid">
-                    <div class="alert-card card-accident" data-cat="ACCIDENT">
-                        <div class="alert-title"><i class="bi bi-car-front-fill alert-ico"></i><span>Acidente</span></div>
-                        <div class="alert-count"><span class="count-num">0</span> evento(s)</div>
-                        <div class="form-check form-switch m-0 alert-switch">
-                            <input class="form-check-input cat-toggle" type="checkbox" checked>
-                            <label class="form-check-label">Mostrar no mapa</label>
-                        </div>
-                    </div>
-
-                    <div class="alert-card card-hazard" data-cat="HAZARD">
-                        <div class="alert-title"><i class="bi bi-exclamation-triangle-fill alert-ico"></i><span>Perigo</span></div>
-                        <div class="alert-count"><span class="count-num">0</span> evento(s)</div>
-                        <div class="form-check form-switch m-0 alert-switch">
-                            <input class="form-check-input cat-toggle" type="checkbox" checked>
-                            <label class="form-check-label">Mostrar no mapa</label>
-                        </div>
-                    </div>
-
-                    <div class="alert-card card-jam" data-cat="JAM">
-                        <div class="alert-title"><i class="bi bi-cone-striped alert-ico"></i><span>Congestionamento</span></div>
-                        <div class="alert-count"><span class="count-num">0</span> evento(s)</div>
-                        <div class="form-check form-switch m-0 alert-switch">
-                            <input class="form-check-input cat-toggle" type="checkbox" checked>
-                            <label class="form-check-label">Mostrar no mapa</label>
-                        </div>
-                    </div>
-
-                    <div class="alert-card card-roadclosed" data-cat="ROAD_CLOSED">
-                        <div class="alert-title"><i class="bi bi-slash-circle-fill alert-ico"></i><span>Fechamento de Via</span></div>
-                        <div class="alert-count"><span class="count-num">0</span> evento(s)</div>
-                        <div class="form-check form-switch m-0 alert-switch">
-                            <input class="form-check-input cat-toggle" type="checkbox" checked>
-                            <label class="form-check-label">Mostrar no mapa</label>
-                        </div>
+                <!-- Campo único: tags + sugestões -->
+                <div class="mb-3">
+                    <div id="oae-ms" class="chips-control">
+                        <div id="oae-chips"></div>
+                        <input id="oae-input" class="chips-input" placeholder="Digite para buscar uma OAE..." list="oaes-list" autocomplete="off">
+                        <datalist id="oaes-list"></datalist>
                     </div>
                 </div>
+
+                <!-- Tipos + colapso -->
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted">Tipos:</span>
+                        <button id="btn-all"  type="button" class="btn btn-sm btn-primary">Todos</button>
+                        <button id="btn-none" type="button" class="btn btn-sm btn-outline-secondary">Nenhum</button>
+                    </div>
+                    <button class="btn btn-sm btn-outline-dark" data-bs-toggle="collapse" data-bs-target="#typesBox" aria-expanded="false" aria-controls="typesBox">
+                        Mostrar tipos <span id="types-badge" class="badge text-bg-secondary ms-1">0</span>
+                    </button>
+                </div>
+
+                <div id="typesBox" class="collapse">
+                    <div id="oae-types" class="d-grid gap-2 mb-3"></div>
+                </div>
+
+                <!-- Cards de Alertas -->
+                <div id="alerts-summary" class="mb-3 d-none">
+                    <h6 class="mb-2">Alertas</h6>
+                    <div class="alerts-grid">
+                        <div class="alert-card card-accident" data-cat="ACCIDENT">
+                            <div class="alert-title"><i class="bi bi-car-front-fill alert-ico"></i><span>Acidente</span></div>
+                            <div class="alert-count"><span class="count-num">0</span> evento(s)</div>
+                            <div class="form-check form-switch m-0 alert-switch">
+                                <input class="form-check-input cat-toggle" type="checkbox" checked>
+                                <label class="form-check-label">Mostrar no mapa</label>
+                            </div>
+                        </div>
+
+                        <div class="alert-card card-hazard" data-cat="HAZARD">
+                            <div class="alert-title"><i class="bi bi-exclamation-triangle-fill alert-ico"></i><span>Perigo</span></div>
+                            <div class="alert-count"><span class="count-num">0</span> evento(s)</div>
+                            <div class="form-check form-switch m-0 alert-switch">
+                                <input class="form-check-input cat-toggle" type="checkbox" checked>
+                                <label class="form-check-label">Mostrar no mapa</label>
+                            </div>
+                        </div>
+
+                        <div class="alert-card card-jam" data-cat="JAM">
+                            <div class="alert-title"><i class="bi bi-cone-striped alert-ico"></i><span>Congestionamento</span></div>
+                            <div class="alert-count"><span class="count-num">0</span> evento(s)</div>
+                            <div class="form-check form-switch m-0 alert-switch">
+                                <input class="form-check-input cat-toggle" type="checkbox" checked>
+                                <label class="form-check-label">Mostrar no mapa</label>
+                            </div>
+                        </div>
+
+                        <div class="alert-card card-roadclosed" data-cat="ROAD_CLOSED">
+                            <div class="alert-title"><i class="bi bi-slash-circle-fill alert-ico"></i><span>Fechamento de Via</span></div>
+                            <div class="alert-count"><span class="count-num">0</span> evento(s)</div>
+                            <div class="form-check form-switch m-0 alert-switch">
+                                <input class="form-check-input cat-toggle" type="checkbox" checked>
+                                <label class="form-check-label">Mostrar no mapa</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dados do Waze (mock + cores) -->
+                <div class="card border-0 shadow-sm mb-2">
+                    <div class="card-header bg-info text-white py-2">
+                        <div class="fw-semibold">Dados do Waze</div>
+                        <div id="waze-updated" class="small">Atualizado: —</div>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="fw-semibold mb-2">Resumo do Trânsito</div>
+                        <ul id="traffic-summary" class="list-group list-group-flush small"></ul>
+                    </div>
+                </div>
+
+                <div id="status" class="small status-muted mt-2"></div>
+                <div class="panel-pad"></div>
             </div>
 
-            <!-- Dados do Waze -->
-            <div class="card border-0 shadow-sm mb-2">
-                <div class="card-header bg-info text-white py-2">
-                    <div class="fw-semibold">Dados do Waze</div>
-                    <div id="waze-updated" class="small">Atualizado: —</div>
-                </div>
-                <div class="card-body p-3">
-                    <div class="fw-semibold mb-2">Resumo do Trânsito</div>
-                    <ul id="traffic-summary" class="list-group list-group-flush small"></ul>
-                </div>
+            <!-- ABA INDICADORES -->
+            <div id="panel-ind" class="d-none">
+                <div id="indicadores-content" class="small text-muted">Carregando…</div>
+                <div class="panel-pad"></div>
             </div>
-
-            <div id="status" class="small status-muted mt-2"></div>
         </div>
     </aside>
 
-    <!-- Barra (sempre visível) -->
+    <!-- Trilho -->
     <div class="rail">
         <button id="btn-toggle" class="rail-btn" title="Abrir/fechar painel"><i class="bi bi-chevron-left"></i></button>
-        <button class="rail-btn primary" title="OAEs"><i class="bi bi-building"></i></button>
-        <button class="rail-btn" title="Alertas"><i class="bi bi-bell-fill"></i></button>
+        <button id="btn-oaes" class="rail-btn primary" title="OAEs"><i class="bi bi-building"></i></button>
+        <button id="btn-alerts" class="rail-btn" title="Alertas (toggle visual)"><i class="bi bi-bell-fill"></i></button>
+        <button id="btn-indicadores" class="rail-btn" title="Gerenciar Indicadores"><i class="bi bi-sliders"></i></button>
     </div>
 </div>
 
@@ -250,8 +255,9 @@
     var typeState = {};
     var selectedOAE = [];      // tags selecionadas
     var allOaeNames = [];      // lista para sugestões
-    var oaeAreaRect = null;    // retângulo ~500m
+    var oaeAreaRects = {};     // { [oaeName]: google.maps.Rectangle }
 
+    /* estilos / cores */
     var CAT_STYLE = {
         ACCIDENT:{ fill:'#ffa726', glyph:'🚗' },
         HAZARD:{ fill:'#ef5350', glyph:'⚠' },
@@ -266,10 +272,34 @@
 
     function setStatus(t){ document.getElementById('status').textContent = t||''; }
 
-    /* ===== Painel: abrir/fechar ===== */
+    /* ===== Painel: abrir/fechar e abas ===== */
     function openPanel(){ document.getElementById('right-shell').classList.add('open'); }
-    function closePanel(){ document.getElementById('right-shell').classList.remove('open'); }
     function togglePanel(){ document.getElementById('right-shell').classList.toggle('open'); }
+
+    /* troca entre OAEs e Indicadores dentro do MESMO painel */
+    function setPanel(tab){
+        var title = document.getElementById('sp-title');
+        var actions = document.getElementById('sp-actions');
+        var oae = document.getElementById('panel-oae');
+        var ind = document.getElementById('panel-ind');
+
+        if (tab === 'ind') {
+            title.textContent = 'Gerenciar Tipos & Indicadores';
+            actions.innerHTML = ''; // sem “Limpar Filtro” aqui (adicione outros botões se quiser)
+            oae.classList.add('d-none');
+            ind.classList.remove('d-none');
+            openPanel();
+            loadIndicadoresUI();
+        } else {
+            title.textContent = 'Obras de Arte Especiais (OAEs)';
+            actions.innerHTML = '<button id="btn-clear-filter" class="btn btn-outline-secondary btn-sm">Limpar Filtro</button>';
+            // reata o handler do botão
+            document.getElementById('btn-clear-filter').onclick = clearOaeFilter;
+            ind.classList.add('d-none');
+            oae.classList.remove('d-none');
+            openPanel();
+        }
+    }
 
     /* ===== Mapa ===== */
     function initMap(){
@@ -279,7 +309,7 @@
         });
         info = new google.maps.InfoWindow();
 
-        // botões do topo
+        // topo: toggles de camadas
         document.getElementById('toggle-oaes').onclick = function(ev){
             var btn = ev.currentTarget;
             btn.classList.toggle('active');
@@ -296,29 +326,116 @@
             updateAlertsVisibility();
         };
 
-        // barra lateral
+        // trilho
         document.getElementById('btn-toggle').onclick = togglePanel;
+        document.getElementById('btn-oaes').onclick = function(){ setPanel('oae'); };
+        document.getElementById('btn-indicadores').onclick = function(){ setPanel('ind'); };
+        document.getElementById('btn-alerts').onclick = function(){
+            // apenas atalho para alternar a camada de alertas
+            var btn = document.getElementById('toggle-alerts');
+            btn.click();
+        };
 
         document.getElementById('btn-clear').onclick = clearAll;
+        // estes botões existem só na aba OAEs, mas já deixo os handlers
         document.getElementById('btn-all').onclick  = function(){ setAllTypes(true); };
         document.getElementById('btn-none').onclick = function(){ setAllTypes(false); };
         document.getElementById('btn-clear-filter').onclick = clearOaeFilter;
 
-        // Campo de busca/tag (enter + change)
+        // Campo de busca/tag
         var input = document.getElementById('oae-input');
         input.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); tryAddOAE(input.value); }});
         input.addEventListener('change', function(){ tryAddOAE(input.value); });
         input.addEventListener('focus', openPanel);
 
-        fillTrafficSummary();
-        updateWazeUpdated();
-        fetchOAEs();
+        fillTrafficSummary();      // mock com cores
+        updateWazeUpdated();       // timestamp
+        fetchOAEs();               // linhas das OAEs
+    }
+
+    /* ===== Indicadores (no painel) ===== */
+    function loadIndicadoresUI(){
+        var box = document.getElementById('indicadores-content');
+        box.innerHTML = 'Carregando…';
+        Promise.all([
+            fetch('api/oae_types.php').then(r=>r.json()),
+            fetch('api/indicators.php').then(r=>r.json())
+        ]).then(function(res){
+            var tipos = res[0]||[], catalogo = res[1]||[];
+            var html = '';
+
+            html += '<div class="mb-3">';
+            html += '  <div class="d-flex align-items-center justify-content-between">';
+            html += '    <h6 class="m-0">Tipos de OAE</h6>';
+            html += '    <span class="badge text-bg-secondary">'+ tipos.length +'</span>';
+            html += '  </div>';
+            html += '</div>';
+
+            html += '<div class="list-group mb-3">';
+            tipos.forEach(function(t){
+                var tid = encodeURIComponent(t.id || t.name);
+                html += '<a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" ';
+                html +=     'onclick="return showTypeIndicators(\''+tid+'\')">';
+                html +=   '<span>'+ (t.name || t.id) +'</span>';
+                html +=   '<i class="bi bi-chevron-right"></i>';
+                html += '</a>';
+            });
+            html += '</div>';
+
+            html += '<div class="mb-2 d-flex align-items-center justify-content-between">';
+            html += '  <h6 class="m-0">Catálogo de Indicadores</h6>';
+            html += '  <span class="badge text-bg-secondary">'+ catalogo.length +'</span>';
+            html += '</div>';
+            html += '<div class="table-responsive" style="max-height:240px;"><table class="table table-sm">';
+            html += '<thead><tr><th>Código</th><th>Label</th><th>Fonte</th><th>Unidade</th></tr></thead><tbody>';
+            catalogo.forEach(function(i){
+                html += '<tr><td>'+i.id+'</td><td>'+i.label+'</td><td>'+i.source+'</td><td>'+(i.unit||'')+'</td></tr>';
+            });
+            html += '</tbody></table></div>';
+
+            box.innerHTML = html;
+        }).catch(function(){
+            box.innerHTML = '<div class="text-danger">Falha ao carregar dados.</div>';
+        });
+    }
+
+    function showTypeIndicators(typeId){
+        var box = document.getElementById('indicadores-content');
+        box.innerHTML = 'Carregando indicadores do tipo…';
+        Promise.all([
+            fetch('api/oae_type_indicators.php?oaeTypeId='+typeId).then(r=>r.json()),
+            fetch('api/indicators.php').then(r=>r.json())
+        ]).then(function(res){
+            var vinc = res[0]||[], catalogo = res[1]||[];
+            var dict = {}; catalogo.forEach(function(i){ dict[i.id]=i; });
+
+            var html = '<button class="btn btn-link p-0 mb-2" onclick="loadIndicadoresUI()"><i class="bi bi-arrow-left"></i> Voltar</button>';
+            html += '<h6 class="mb-2">Indicadores do Tipo</h6>';
+
+            if(!vinc.length){
+                html += '<div class="text-muted">Nenhum indicador vinculado ainda.</div>';
+            } else {
+                html += '<ul class="list-group">';
+                vinc.sort(function(a,b){ return (a.weight||999)-(b.weight||999); }).forEach(function(v){
+                    var ind = dict[v.indicatorId] || { id:v.indicatorId, label:v.indicatorId };
+                    html += '<li class="list-group-item d-flex justify-content-between align-items-center">';
+                    html +=   '<div><div class="fw-semibold">'+ind.label+'</div>';
+                    html +=   '<div class="text-muted small">'+ind.id+' • '+(ind.source||'')+' • peso: '+(v.weight||'-')+'</div></div>';
+                    html += '</li>';
+                });
+                html += '</ul>';
+            }
+            box.innerHTML = html;
+        }).catch(function(){
+            box.innerHTML = '<div class="text-danger">Erro ao carregar vínculos.</div>';
+        });
+        return false;
     }
 
     /* ===== OAEs ===== */
     function fetchOAEs(){
         setStatus('Carregando OAEs...');
-        fetch('api/oaes.php?mock=1').then(function(r){return r.json();}).then(function(fc){
+        fetch('api/oaes.php?mock=1').then(r=>r.json()).then(function(fc){
             renderOAEs(fc);
             setStatus('OAEs carregadas: '+oaeLayers.length+'. Use o campo acima para selecionar.');
         }).catch(function(e){ console.error(e); setStatus('Falha ao carregar OAEs (veja o console).'); });
@@ -348,13 +465,13 @@
             });
             pl.__oaeName=oaeName; pl.__oaeType=oaeType;
             if(!typePolylines[oaeType]) typePolylines[oaeType]=[];
+
             typePolylines[oaeType].push(pl);
             oaeLayers.push(pl);
 
-            // clique na OAE → seleciona + abre painel + desenha área
             pl.addListener('click', function(){
                 addOAE(oaeName, true);
-                openPanel();
+                setPanel('oae');
             });
         });
 
@@ -415,40 +532,59 @@
         var found=null; for(var i=0;i<allOaeNames.length;i++){ if(allOaeNames[i].toLowerCase()===name.toLowerCase()){ found=allOaeNames[i]; break; } }
         addOAE(found||name, true);
         document.getElementById('oae-input').value='';
-        openPanel();
+        setPanel('oae');
     }
 
-    /* Desenha área (retângulo ~500m) no centro do bounds da OAE */
-    function drawAreaForPolyline(pl, meters){
+    /* área 500m */
+    function drawAreaForPolyline(pl, meters, keyName){
         meters = meters || 500;
         var path = pl.getPath(); if(!path || path.getLength()===0) return;
+
         var b=new google.maps.LatLngBounds();
-        for(var i=0;i<path.getLength();i++) b.extend(path.getAt(i));
+        for (var i=0;i<path.getLength();i++) b.extend(path.getAt(i));
         var c=b.getCenter();
+
         var n=google.maps.geometry.spherical.computeOffset(c,meters,0);
         var s=google.maps.geometry.spherical.computeOffset(c,meters,180);
         var e=google.maps.geometry.spherical.computeOffset(c,meters,90);
         var w=google.maps.geometry.spherical.computeOffset(c,meters,270);
-        var rect={ north:n.lat(), south:s.lat(), east:e.lng(), west:w.lng() };
-        if(oaeAreaRect) oaeAreaRect.setMap(null);
-        oaeAreaRect=new google.maps.Rectangle({
-            bounds:rect, strokeColor:'#e53935', strokeOpacity:.85, strokeWeight:2,
+
+        if (oaeAreaRects[keyName]) oaeAreaRects[keyName].setMap(null);
+        oaeAreaRects[keyName] = new google.maps.Rectangle({
+            bounds:{ north:n.lat(), south:s.lat(), east:e.lng(), west:w.lng() },
+            strokeColor:'#e53935', strokeOpacity:.85, strokeWeight:2,
             fillColor:'#e53935', fillOpacity:.18, map:map
         });
     }
 
     function addOAE(name, zoom){
-        for(var i=0;i<selectedOAE.length;i++){ if(selectedOAE[i]===name) return; }
+        for (var i=0;i<selectedOAE.length;i++) if (selectedOAE[i]===name) return;
         selectedOAE.push(name);
         renderChips();
-        var pl=findPolylineByName(name);
-        if(pl){ if(zoom) fitToSelectedOAEs(); drawAreaForPolyline(pl,500); }
+
+        var pl = findPolylineByName(name);
+        if (pl){
+            pl.setOptions({ strokeWeight:6, strokeOpacity:1 });
+            drawAreaForPolyline(pl, 500, name);
+        }
+
+        if (zoom) fitToSelectedOAEs({ maxZoom: 15 });
         fetchAlertsForOAEs(selectedOAE);
     }
+
     function removeOAE(name){
         selectedOAE = selectedOAE.filter(function(n){ return n!==name; });
-        renderChips(); fitToSelectedOAEs(); fetchAlertsForOAEs(selectedOAE);
+        renderChips();
+
+        if (oaeAreaRects[name]) { oaeAreaRects[name].setMap(null); delete oaeAreaRects[name]; }
+
+        var pl = findPolylineByName(name);
+        if (pl) pl.setOptions({ strokeWeight:4, strokeOpacity:.9 });
+
+        fitToSelectedOAEs({ maxZoom: 15 });
+        fetchAlertsForOAEs(selectedOAE);
     }
+
     function renderChips(){
         var box=document.getElementById('oae-chips'); box.innerHTML='';
         selectedOAE.forEach(function(n){
@@ -458,28 +594,45 @@
             box.appendChild(chip);
         });
     }
-    function fitToSelectedOAEs(){
+    function fitToSelectedOAEs(opts){
         if(!selectedOAE.length) return;
-        var b=new google.maps.LatLngBounds(), any=false;
-        selectedOAE.forEach(function(n){
-            var pl=findPolylineByName(n);
-            if(pl){ var path=pl.getPath(); for(var i=0;i<path.getLength();i++){ b.extend(path.getAt(i)); any=true; }
-                pl.setOptions({strokeWeight:6, strokeOpacity:1}); }
+
+        var b = new google.maps.LatLngBounds(), any = false;
+        for (var s=0; s<selectedOAE.length; s++){
+            var pl = findPolylineByName(selectedOAE[s]);
+            if (!pl) continue;
+            var path = pl.getPath();
+            for (var i=0; i<path.getLength(); i++) { b.extend(path.getAt(i)); any = true; }
+            pl.setOptions({ strokeWeight:6, strokeOpacity:1 });
+        }
+        if (!any) return;
+
+        var padding = (opts && opts.padding) || { top:40, left:40, bottom:40, right:40 + 420 + 64 + 16 };
+        var maxZoom = (opts && opts.maxZoom) || 15;
+
+        var usedPadding = false;
+        try { map.fitBounds(b, padding); usedPadding = true; } catch(e){ map.fitBounds(b); }
+        google.maps.event.addListenerOnce(map, 'idle', function(){
+            if (map.getZoom() > maxZoom) map.setZoom(maxZoom);
+            if (!usedPadding) { var shiftRight = (420 + 64) / 2; map.panBy(-shiftRight, 0); }
         });
-        if(any) map.fitBounds(b);
     }
+
     function findPolylineByName(name){
         for(var i=0;i<oaeLayers.length;i++){ if(oaeLayers[i].__oaeName===name) return oaeLayers[i]; }
         return null;
     }
     function clearOaeFilter(){
-        selectedOAE=[]; renderChips(); clearAlerts();
-        if(oaeAreaRect){ oaeAreaRect.setMap(null); oaeAreaRect=null; }
+        selectedOAE = [];
+        renderChips();
+        clearAlerts();
+        for (var k in oaeAreaRects){ if (!oaeAreaRects.hasOwnProperty(k)) continue; oaeAreaRects[k].setMap(null); }
+        oaeAreaRects = {};
         setStatus('Filtro limpo. Selecione OAEs para ver alertas.');
     }
 
     /* ===== ALERTAS ===== */
-    function eqName(a,b){ return String(a||'').replace(/^\s+|\s+$/g,'').toLowerCase() === String(b||'').replace(/^\s+|\s+$/g,'').toLowerCase(); }
+    function eqName(a,b){ return String(a||'').trim().toLowerCase() === String(b||'').trim().toLowerCase(); }
 
     function fetchAlertsForOAEs(names){
         clearAlerts();
@@ -608,7 +761,10 @@
         var empty=true; for(var k in markersByCat){ if(markersByCat.hasOwnProperty(k) && markersByCat[k].length){ empty=false; break; } }
         box.classList.toggle('d-none', empty);
         var cards=box.querySelectorAll('[data-cat]');
-        for(var i=0;i<cards.length;i++){ var cat=cards[i].getAttribute('data-cat'); var n=(markersByCat[cat]||[]).length; cards[i].querySelector('.count-num').textContent=n; }
+        for(var i=0;i<cards.length;i++){
+            var cat=cards[i].getAttribute('data-cat'); var n=(markersByCat[cat]||[]).length;
+            cards[i].querySelector('.count-num').textContent=n;
+        }
     }
     function updateAlertsVisibility(){
         var box=document.getElementById('alerts-summary');
@@ -626,21 +782,32 @@
     function clearAll(){
         oaeLayers.forEach(function(l){ l.setMap(null); }); oaeLayers.length=0;
         for(var k in typePolylines){ if(typePolylines.hasOwnProperty(k)) delete typePolylines[k]; }
-        if(oaeAreaRect){ oaeAreaRect.setMap(null); oaeAreaRect=null; }
+        for (var name in oaeAreaRects){ if (oaeAreaRects.hasOwnProperty(name) && oaeAreaRects[name]) oaeAreaRects[name].setMap(null); }
+        oaeAreaRects = {};
         clearOaeFilter();
         setStatus('Camadas limpas. Recarregue para buscar novamente.');
     }
+
+    /* Mock “Dados do Waze” com cores e espaçamento */
     function updateWazeUpdated(){
         var el=document.getElementById('waze-updated'); var dt=new Date();
         function pad(n){ n=String(n); return n.length<2 ? '0'+n : n; }
         el.textContent='Atualizado: '+pad(dt.getDate())+'/'+pad(dt.getMonth()+1)+'/'+dt.getFullYear()+', '+pad(dt.getHours())+':'+pad(dt.getMinutes())+':'+pad(dt.getSeconds());
     }
     function fillTrafficSummary(){
-        var levels=[ {name:'Nível 1',km:'—'},{name:'Nível 2',km:'—'},{name:'Nível 3',km:'—'},{name:'Nível 4',km:'—'},{name:'Nível 5',km:'—'} ];
+        // mock: valores e classes para cor
+        var rows = [
+            {name:'Nível 1', km: (Math.random()*80+10).toFixed(2)+' km', cls:'badge-t1'},
+            {name:'Nível 2', km: (Math.random()*350+50).toFixed(2)+' km', cls:'badge-t2'},
+            {name:'Nível 3', km: (Math.random()*650+120).toFixed(2)+' km', cls:'badge-t3'},
+            {name:'Nível 4', km: (Math.random()*350+120).toFixed(2)+' km', cls:'badge-t4'},
+            {name:'Nível 5', km: (Math.random()*120+10).toFixed(2)+' km', cls:'badge-t5'}
+        ];
         var ul=document.getElementById('traffic-summary'); ul.innerHTML='';
-        levels.forEach(function(lv){
-            var li=document.createElement('li'); li.className='list-group-item d-flex justify-content-between align-items-center';
-            li.innerHTML='<span>'+lv.name+'</span><span class="badge rounded-pill text-bg-light">'+lv.km+'</span>';
+        rows.forEach(function(lv){
+            var li=document.createElement('li');
+            li.className='list-group-item d-flex justify-content-between align-items-center';
+            li.innerHTML='<span>'+lv.name+'</span><span class="badge-traffic '+lv.cls+'">'+lv.km+'</span>';
             ul.appendChild(li);
         });
     }

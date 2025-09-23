@@ -18,3 +18,4 @@ fi
 
 # Sobe o Apache em foreground
 exec apache2-foreground
+

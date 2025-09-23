@@ -1,0 +1,37 @@
+[
+  {"oaeTypeId":"ponte","indicatorId":"FLOW_AVG_SPEED","weight":1},
+  {"oaeTypeId":"ponte","indicatorId":"FLOW_TRAVEL_TIME","weight":2},
+  {"oaeTypeId":"ponte","indicatorId":"FLOW_CONGESTION_INDEX","weight":3},
+  {"oaeTypeId":"ponte","indicatorId":"INC_ACCIDENTS","weight":4},
+  {"oaeTypeId":"ponte","indicatorId":"INC_POTHOLES","weight":5},
+  {"oaeTypeId":"ponte","indicatorId":"ASSET_CAM_COUNT","weight":6},
+  {"oaeTypeId":"ponte","indicatorId":"ASSET_CAM_UPTIME","weight":7},
+
+  {"oaeTypeId":"viaduto","indicatorId":"FLOW_AVG_SPEED","weight":1},
+  {"oaeTypeId":"viaduto","indicatorId":"FLOW_SLOW_EVENTS","weight":2},
+  {"oaeTypeId":"viaduto","indicatorId":"FLOW_SLOW_DURATION","weight":3},
+  {"oaeTypeId":"viaduto","indicatorId":"INC_ACCIDENTS","weight":4},
+  {"oaeTypeId":"viaduto","indicatorId":"INC_OTHER_HAZARDS","weight":5},
+  {"oaeTypeId":"viaduto","indicatorId":"ASSET_CAM_COUNT","weight":6},
+  {"oaeTypeId":"viaduto","indicatorId":"ASSET_CAM_UPTIME","weight":7},
+
+  {"oaeTypeId":"tunel","indicatorId":"FLOW_TRAVEL_TIME","weight":1},
+  {"oaeTypeId":"tunel","indicatorId":"FLOW_CONGESTION_INDEX","weight":2},
+  {"oaeTypeId":"tunel","indicatorId":"INC_ACCIDENTS","weight":3},
+  {"oaeTypeId":"tunel","indicatorId":"INC_FLOOD","weight":4},
+  {"oaeTypeId":"tunel","indicatorId":"ASSET_CAM_COUNT","weight":5},
+  {"oaeTypeId":"tunel","indicatorId":"ASSET_CAM_UPTIME","weight":6},
+
+  {"oaeTypeId":"passarela","indicatorId":"FLOW_TRAVEL_TIME","weight":1},
+  {"oaeTypeId":"passarela","indicatorId":"FLOW_SLOW_EVENTS","weight":2},
+  {"oaeTypeId":"passarela","indicatorId":"INC_OTHER_HAZARDS","weight":3},
+  {"oaeTypeId":"passarela","indicatorId":"ASSET_CAM_COUNT","weight":4},
+  {"oaeTypeId":"passarela","indicatorId":"ASSET_CAM_UPTIME","weight":5},
+
+  {"oaeTypeId":"trincheira","indicatorId":"FLOW_TRAVEL_TIME","weight":1},
+  {"oaeTypeId":"trincheira","indicatorId":"FLOW_CONGESTION_INDEX","weight":2},
+  {"oaeTypeId":"trincheira","indicatorId":"INC_FLOOD","weight":3},
+  {"oaeTypeId":"trincheira","indicatorId":"INC_POTHOLES","weight":4},
+  {"oaeTypeId":"trincheira","indicatorId":"ASSET_CAM_COUNT","weight":5},
+  {"oaeTypeId":"trincheira","indicatorId":"ASSET_CAM_UPTIME","weight":6}
+]
