@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8" />
+    <title>OAEs – Polígonos + Alertas</title>
+    <style>
+        html, body, #map { height: 100%; margin: 0; }
+        .legend {
+            position:absolute; bottom:14px; left:14px; background:#fff; padding:8px 10px;
+            border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,.12); font-family:system-ui,sans-serif; font-size:13px;
+        }
+        .legend div{ display:flex; gap:8px; align-items:center; margin:3px 0; }
+        .legend i{ width:14px; height:14px; border-radius:3px; display:inline-block; }
+    </style>
+    <script>
+        // === CONFIG ===
+        const GEOJSON_URL = '/data/oae_poligonos_sp.json';
+        // se quiser testar mock: mock=1; quando for real: mock=0
+        const ALERTS_URL  = (oaeNome) => `/api/alerts.php?mock=1&oae_name=${encodeURIComponent(oaeNome)}`;
+
+        // Paleta por tipo
+        const TYPE_COLORS = {
+            'Ponte':'#f97316', 'Viaduto':'#0ea5e9', 'Passarela':'#84cc16',
+            'Túnel':'#a855f7', 'Pontilhão':'#ef4444', 'Trincheira':'#22c55e'
+        };
+
+        let map, info;
+
+        async function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: -23.55, lng: -46.63 },
+                zoom: 12,
+                mapId: 'oae-map'
+            });
+            info = new google.maps.InfoWindow();
+
+            // Estilo dos polígonos
+            map.data.setStyle(feature => {
+                const tipo = feature.getProperty('oae_tipo') || 'Outro';
+                const color = TYPE_COLORS[tipo] || '#fb923c';
+                return { fillColor: color, fillOpacity: 0.25, strokeColor: color, strokeOpacity: 0.9, strokeWeight: 2 };
+            });
+
+            // Hover
+            map.data.addListener('mouseover', e => map.data.overrideStyle(e.feature, { strokeWeight: 4, fillOpacity: .35 }));
+            map.data.addListener('mouseout',  e => map.data.revertStyle(e.feature));
+
+            // Clique → popup + busca alerts
+            map.data.addListener('click', async (e) => {
+                const get = p => e.feature.getProperty(p);
+                const nome   = get('oae_nome') || 'OAE';
+                const tipo   = get('oae_tipo') || '-';
+                const codigo = get('oae_codigo') || '-';
+
+                // Ajusta para caber o polígono
+                const bounds = new google.maps.LatLngBounds();
+                e.feature.getGeometry().forEachLatLng(ll => bounds.extend(ll));
+                map.fitBounds(bounds, 60);
+
+                // Busca alertas
+                let alertsHtml = '<em>Nenhum alerta</em>';
+                try {
+                    const res = await fetch(ALERTS_URL(nome));
+                    const json = await res.json();
+                    const events = (json && json.events) || json || [];
+                    if (Array.isArray(events) && events.length) {
+                        alertsHtml = events.slice(0, 8).map(ev => `
+            <div style="margin:.2rem 0;">
+              <strong>${ev.type || ev.tipo || 'Alerta'}</strong>
+              ${ev.subtype || ev.subtipo ? `<span style="color:#666"> • ${ev.subtype || ev.subtipo}</span>` : ''}
+              ${ev.description || ev.descricao ? `<br><small>${ev.description || ev.descricao}</small>` : ''}
+            </div>`).join('');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alertsHtml = '<span style="color:#dc2626">Erro ao buscar alertas</span>';
+                }
+
+                info.setContent(`
+        <div style="min-width:260px">
+          <div style="font-weight:700">${nome}</div>
+          <div style="color:#666">Tipo: ${tipo} • Código: ${codigo}</div>
+          <hr style="margin:.5rem 0" />
+          <div><strong>Alertas</strong></div>
+          <div>${alertsHtml}</div>
+          <div style="margin-top:.5rem">
+            <a href="/painel/oae?nome=${encodeURIComponent(nome)}" target="_blank">Abrir painel da OAE</a>
+          </div>
+        </div>
+      `);
+                info.setPosition(e.latLng);
+                info.open(map);
+            });
+
+            // Carrega GeoJSON
+            await new Promise((resolve, reject) => {
+                map.data.loadGeoJson(GEOJSON_URL, null, resolve);
+            });
+
+            // Enquadra todas as feições
+            const bounds = new google.maps.LatLngBounds();
+            map.data.forEach(f => f.getGeometry().forEachLatLng(ll => bounds.extend(ll)));
+            if (!bounds.isEmpty()) map.fitBounds(bounds, 60);
+
+            // Legenda
+            addLegend();
+        }
+
+        function addLegend(){
+            const wrap = document.createElement('div');
+            wrap.className = 'legend';
+            wrap.innerHTML = '<div style="font-weight:600; margin-bottom:4px;">Tipos de OAE</div>' +
+                Object.keys(TYPE_COLORS).map(k => `<div><i style="background:${TYPE_COLORS[k]}"></i>${k}</div>`).join('');
+            document.body.appendChild(wrap);
+        }
+    </script>
+    <script async defer src="https://maps.google.com/maps/api/js?v=beta&libraries=visualization,drawing,geometry,places&key=AIzaSyCd3zT_keK2xr7T6ujvR3TvLj5c9u0PtsM&callback=Function.prototype"></script>
+</head>
+<body>
+<div id="map"></div>
+</body>
+</html>
