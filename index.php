@@ -170,7 +170,7 @@
             <!-- ===== Painel: Alertas por OAE (monitoramento) ===== -->
             <div id="panel-alerts" class="d-none">
                 <div class="mb-2">
-                    <div class="small text-muted">Selecione OAEs digitando (chips) ou clicando no mapa. Marque as categorias e ligue <b>Monitorar</b> para receber novos alertas (polling 20s, com deduplicação).</div>
+                    <div class="small text-muted">Selecione OAEs digitando ou clicando no mapa.</div>
                 </div>
 
                 <div class="mb-2">
@@ -181,43 +181,41 @@
                     </div>
                 </div>
 
-                <div class="d-flex align-items-center gap-3 mb-2">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input mon-cat" type="checkbox" id="mon-acc" data-cat="ACCIDENT" checked>
-                        <label class="form-check-label" for="mon-acc">Acidente</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input mon-cat" type="checkbox" id="mon-haz" data-cat="HAZARD" checked>
-                        <label class="form-check-label" for="mon-haz">Perigo</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input mon-cat" type="checkbox" id="mon-jam" data-cat="JAM" checked>
-                        <label class="form-check-label" for="mon-jam">Congestionamento</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input mon-cat" type="checkbox" id="mon-rc" data-cat="ROAD_CLOSED" checked>
-                        <label class="form-check-label" for="mon-rc">Fechamento</label>
-                    </div>
+                <div class="mb-3">
+                    <label for="mon-category" class="form-label mb-1">Alertas</label>
+                    <select id="mon-category" class="form-select">
+                        <option value="">Selecione uma opção</option>
+                        <option value="ACCIDENT">Acidente</option>
+                        <option value="JAM">Congestionamento</option>
+                        <option value="ROAD_CLOSED">Via interditada</option>
+                        <option value="HAZARD">Perigo</option>
+                        <option value="SEMAFORO_OFF">Semáforo desligado</option>
+                    </select>
                 </div>
 
-                <div class="form-check form-switch mb-3">
-                    <input class="form-check-input" type="checkbox" id="mon-switch">
-                    <label class="form-check-label" for="mon-switch">Monitorar</label>
+                <div class="d-grid mb-3">
+                    <button id="mon-switch" class="btn btn-primary" data-active="0">
+                        <i class="bi bi-play-circle"></i> Monitorar alerta
+                    </button>
+                    <div id="monitor-feedback" class="small mt-2 d-none"></div>
                 </div>
 
                 <div class="card border-0 shadow-sm">
                     <div class="card-header py-2">
-                        <div class="fw-semibold">Novos alertas</div>
+                        <div class="fw-semibold">Status de Alertas</div>
                     </div>
                     <div class="card-body p-0">
-                        <div id="mon-feed" class="feed"></div>
+                        <ul id="mon-reqs" class="list-group list-group-flush small">
+                            <li class="list-group-item text-muted">
+                                Nenhum pedido de monitoramento ativo.
+                            </li>
+                        </ul>
                     </div>
                 </div>
 
-                <div class="panel-pad"></div>
-            </div>
 
-            <!-- ===== Painel Gerenciar Tipos & Indicadores ===== -->
+
+                <!-- ===== Painel Gerenciar Tipos & Indicadores ===== -->
             <div id="panel-ind" class="d-none">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <div class="fw-semibold">Cadastro e herança de indicadores</div>
@@ -793,8 +791,13 @@
         });
     }
     function clearMonOaEs(){
-        monSelectedOAEIds=[]; renderMonChips(); document.getElementById('mon-feed').innerHTML=''; monSeen={};
+        monSelectedOAEIds = [];
+        renderMonChips();
+        var feed = document.getElementById('mon-feed');
+        if (feed) feed.innerHTML = '';
+        monSeen = {};
     }
+
     function startMonitor(){
         if (monTimer) return;
         monPoll(); monTimer = setInterval(monPoll, 20000);
@@ -902,9 +905,370 @@
     }
 
     window.addEventListener('load', initMap);
+
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    /* ========= Utilitário de Toast (Bootstrap 5) ========= */
+    function showToast({title='Sucesso', message='Operação concluída.', variant='success', autohide=true, delay=2400} = {}){
+        const ctr = document.getElementById('toast-ctr'); if(!ctr) return;
+        const bg = {
+            success:'bg-success text-white', danger:'bg-danger text-white', warning:'bg-warning',
+            info:'bg-info', primary:'bg-primary text-white', secondary:'bg-secondary text-white'
+        }[variant] || 'bg-dark text-white';
+
+        const el = document.createElement('div');
+        el.className = `toast align-items-center border-0 shadow`;
+        el.setAttribute('role','alert'); el.setAttribute('aria-live','assertive'); el.setAttribute('aria-atomic','true');
+        el.innerHTML = `
+    <div class="toast-header ${bg}">
+      <strong class="me-auto">${title}</strong>
+      <small>agora</small>
+      <button type="button" class="btn-close btn-close-white ms-2 mb-1" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+    <div class="toast-body">${message}</div>
+  `;
+        ctr.appendChild(el);
+        const t = new bootstrap.Toast(el, { autohide, delay });
+        t.show();
+        el.addEventListener('hidden.bs.toast', () => el.remove());
+    }
+
+    /* Helpers globais para você chamar quando quiser */
+    window.notifyAlertSent = function(oaeName, tipo){
+        showToast({ title:'Alerta enviado', message:`${tipo||'Alerta'} para ${oaeName||'OAE'} enviado com sucesso.`, variant:'primary' });
+    };
+    window.notifyAlertReceived = function(oaeName, tipo){
+        showToast({ title:'Novo alerta', message:`${tipo||'Alerta'} detectado em ${oaeName||'OAE'}.`, variant:'warning' });
+    };
+</script>
+<script>
+    /* Botão "Monitorar alerta" como toggle + toasts (compatível com seu código) */
+    (function(){
+        var el = document.getElementById('mon-switch');
+        if (!el) return;
+
+        // Se for input checkbox, deixamos seu handler original funcionar.
+        if (el.tagName === 'INPUT') return;
+
+        // Se for BUTTON com data-active="0|1"
+        el.addEventListener('click', function(){
+            var active = el.dataset.active === '1';
+            if (!active){
+                el.dataset.active = '1';
+                el.classList.remove('btn-primary'); el.classList.add('btn-danger');
+                el.innerHTML = '<i class="bi bi-stop-circle"></i> Parar monitoramento';
+                if (typeof startMonitor === 'function') startMonitor();
+                showToast({ title:'Monitoramento', message:'Preferências salvas. Monitoramento iniciado.', variant:'success' });
+            } else {
+                el.dataset.active = '0';
+                el.classList.remove('btn-danger'); el.classList.add('btn-primary');
+                el.innerHTML = '<i class="bi bi-play-circle"></i> Monitorar alerta';
+                if (typeof stopMonitor === 'function') stopMonitor();
+                showToast({ title:'Monitoramento', message:'Monitoramento encerrado.', variant:'secondary' });
+            }
+        });
+    })();
+</script>
+<script>
+    /* ===== Pedidos de alerta (UI local) ===== */
+    (function(){
+        var btn      = document.getElementById('mon-switch');     // botão Monitorar alerta (já existe)
+        var sel      = document.getElementById('mon-category');   // select de tipo
+        var listEl   = document.getElementById('mon-reqs');       // lista de pedidos
+        var clearAll = document.getElementById('mon-clear-all');
+
+        // estado local dos pedidos: { id, oaeId, oaeName, type, active, createdAt }
+        var monRequests = [];
+
+        // mapeia código -> rótulo
+        var TYPE_LABEL = {
+            ACCIDENT:'Acidente',
+            JAM:'Congestionamento',
+            ROAD_CLOSED:'Via interditada',
+            HAZARD:'Perigo',
+            SEMAFORO_OFF:'Semáforo desligado'
+        };
+
+        // util: nomes de OAEs selecionadas no painel de monitoramento
+        function getMonOaeIds(){ return (window.monSelectedOAEIds || []).slice(); }
+        function getOaeNameById(id){
+            if (typeof getPolylineById !== 'function') return 'OAE';
+            var pl = getPolylineById(id);
+            return (pl && pl.__oaeName) ? pl.__oaeName : 'OAE';
+        }
+
+        function renderList(){
+            listEl.innerHTML = '';
+            if (!monRequests.length){
+                listEl.innerHTML = '<li class="list-group-item text-muted">Nenhum pedido ainda. Selecione OAEs, escolha um alerta e clique em “Monitorar alerta”.</li>';
+                return;
+            }
+            monRequests.forEach(function(req){
+                var li = document.createElement('li');
+                li.className = 'list-group-item';
+                li.dataset.reqId = req.id;
+
+                var badgeCls = req.active ? 'text-bg-success' : 'text-bg-secondary';
+                var statusTxt = req.active ? 'Ativo' : 'Inativo';
+
+                li.innerHTML = `
+        <div class="d-flex align-items-start gap-2">
+          <div class="flex-grow-1">
+            <div class="fw-semibold">${req.oaeName}</div>
+            <div class="text-muted">Alerta: ${TYPE_LABEL[req.type] || req.type}</div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge ${badgeCls}">${statusTxt}</span>
+            <div class="form-check form-switch m-0" title="Ativar/Inativar">
+              <input class="form-check-input req-toggle" type="checkbox" ${req.active ? 'checked':''}>
+            </div>
+            <button class="btn btn-sm btn-outline-danger req-del" title="Excluir">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      `;
+                listEl.appendChild(li);
+            });
+        }
+
+        // cria/atualiza pedidos para cada OAE selecionada
+        function addRequests(type){
+            var ids = getMonOaeIds();
+            if (!ids.length){
+                if (typeof showToast === 'function') showToast({title:'Atenção', message:'Selecione ao menos uma OAE.', variant:'warning'});
+                else alert('Selecione ao menos uma OAE.');
+                return;
+            }
+            if (!type){
+                if (typeof showToast === 'function') showToast({title:'Atenção', message:'Selecione um tipo de alerta.', variant:'warning'});
+                else alert('Selecione um tipo de alerta.');
+                return;
+            }
+
+            // adiciona (ou reativa) um pedido por OAE
+            var created = 0;
+            ids.forEach(function(oaeId){
+                var oaeName = getOaeNameById(oaeId);
+                var key = type + '|' + oaeId;
+                var found = monRequests.find(function(r){ return r.key === key; });
+                if (found){
+                    found.active = true; // reativa se já existia
+                } else {
+                    monRequests.push({
+                        id: 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2),
+                        key: key,
+                        oaeId: oaeId,
+                        oaeName: oaeName,
+                        type: type,
+                        active: true,
+                        createdAt: Date.now()
+                    });
+                    created++;
+                }
+            });
+
+            renderList();
+
+            if (typeof showToast === 'function') {
+                var msg = created ? 'Pedido(s) criado(s) com sucesso.' : 'Pedido(s) atualizado(s).';
+                showToast({ title:'Monitoramento', message: msg, variant:'success' });
+            }
+        }
+
+        // eventos
+        if (btn){
+            btn.addEventListener('click', function(){
+                addRequests(sel ? sel.value : '');
+            });
+        }
+
+        if (clearAll){
+            clearAll.addEventListener('click', function(){
+                if (!monRequests.length) return;
+                monRequests = [];
+                renderList();
+                if (typeof showToast === 'function') showToast({ title:'Limpo', message:'Todos os pedidos foram removidos.', variant:'secondary' });
+            });
+        }
+
+        // delegação para excluir / ativar-inativar
+        listEl.addEventListener('click', function(ev){
+            var target = ev.target;
+            var li = target.closest('li.list-group-item');
+            if (!li) return;
+            var id = li.dataset.reqId;
+
+            // excluir
+            if (target.closest('.req-del')){
+                monRequests = monRequests.filter(function(r){ return r.id !== id; });
+                renderList();
+                if (typeof showToast === 'function') showToast({ title:'Excluído', message:'Pedido removido.', variant:'secondary' });
+                return;
+            }
+        });
+
+        // mudança do switch Ativo/Inativo
+        listEl.addEventListener('change', function(ev){
+            if (!ev.target.classList.contains('req-toggle')) return;
+            var li = ev.target.closest('li.list-group-item'); if (!li) return;
+            var id = li.dataset.reqId;
+            var req = monRequests.find(function(r){ return r.id === id; });
+            if (!req) return;
+            req.active = !!ev.target.checked;
+            renderList();
+            if (typeof showToast === 'function') {
+                showToast({ title:'Status', message: req.active ? 'Pedido ativado.' : 'Pedido inativado.', variant: req.active ? 'success' : 'secondary' });
+            }
+        });
+
+        // primeira renderização
+        renderList();
+    })();
+</script>
+
+<script>
+    /* ===== Lista de pedidos de alerta (UI local) ===== */
+    (function(){
+        var btn    = document.getElementById('mon-switch');      // teu botão "Monitorar alerta"
+        var sel    = document.getElementById('mon-category');    // select de tipo
+        var listEl = document.getElementById('mon-reqs');        // lista no card
+
+        // estado local (em window para reuso, se quiser)
+        window.monRequests = window.monRequests || []; // [{id,key,oaeId,oaeName,type,active,createdAt}]
+
+        var TYPE_LABEL = {
+            ACCIDENT:'Acidente',
+            JAM:'Congestionamento',
+            ROAD_CLOSED:'Via interditada',
+            HAZARD:'Perigo',
+            SEMAFORO_OFF:'Semáforo desligado'
+        };
+
+        function getMonOaeIds(){ return (window.monSelectedOAEIds || []).slice(); }
+        function getOaeNameById(id){
+            var pl = (typeof getPolylineById==='function') ? getPolylineById(id) : null;
+            return (pl && pl.__oaeName) ? pl.__oaeName : 'OAE';
+        }
+
+        function renderList(){
+            if (!listEl) return;
+            listEl.innerHTML = '';
+            if (!window.monRequests.length){
+                listEl.innerHTML = '<li class="list-group-item text-muted">Nenhum pedido de monitoramento ativo.</li>';
+                return;
+            }
+            window.monRequests.forEach(function(req){
+                var li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                li.dataset.reqId = req.id;
+
+                var badgeCls = req.active ? 'text-bg-success' : 'text-bg-secondary';
+                var statusTxt = req.active ? 'Ativo' : 'Inativo';
+
+                li.innerHTML = `
+        <div>
+          <div class="fw-semibold">${req.oaeName}</div>
+          <div class="text-muted">Alerta: ${TYPE_LABEL[req.type] || req.type}</div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge ${badgeCls}">${statusTxt}</span>
+          <div class="form-check form-switch m-0" title="Ativar/Inativar">
+            <input class="form-check-input req-toggle" type="checkbox" ${req.active ? 'checked' : ''}>
+          </div>
+          <button class="btn btn-sm btn-outline-danger req-del" title="Excluir">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      `;
+                listEl.appendChild(li);
+            });
+        }
+
+        function addRequests(type){
+            var ids = getMonOaeIds();
+            if (!type){
+                if (typeof showToast==='function') showToast({title:'Atenção', message:'Selecione um tipo de alerta.', variant:'warning'}); else alert('Selecione um tipo de alerta.');
+                return;
+            }
+            if (!ids.length){
+                if (typeof showToast==='function') showToast({title:'Atenção', message:'Selecione ao menos uma OAE.', variant:'warning'}); else alert('Selecione ao menos uma OAE.');
+                return;
+            }
+
+            var created = 0;
+            ids.forEach(function(oaeId){
+                var key = type + '|' + oaeId;
+                var found = window.monRequests.find(function(r){ return r.key === key; });
+                if (found){
+                    found.active = true; // reativa se já existia
+                } else {
+                    window.monRequests.push({
+                        id: 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2),
+                        key: key,
+                        oaeId: oaeId,
+                        oaeName: getOaeNameById(oaeId),
+                        type: type,
+                        active: true,
+                        createdAt: Date.now()
+                    });
+                    created++;
+                }
+            });
+
+            renderList();
+            if (typeof showToast==='function'){
+                showToast({ title:'Status de alertas', message: created ? 'Pedido(s) criado(s) com sucesso.' : 'Pedido(s) atualizado(s).', variant:'success' });
+            }
+        }
+
+        // Garantir que o botão NÃO vire "Parar monitoramento" (remove listeners antigos)
+        if (btn){
+            var clone = btn.cloneNode(true);
+            btn.parentNode.replaceChild(clone, btn);
+            clone.classList.remove('btn-danger'); // fica sempre primário
+            clone.classList.add('btn-primary');
+            clone.innerHTML = '<i class="bi bi-play-circle"></i> Monitorar alerta';
+            clone.addEventListener('click', function(){
+                addRequests(sel ? sel.value : '');
+            });
+        }
+
+        // excluir e ativar/inativar
+        if (listEl){
+            listEl.addEventListener('click', function(ev){
+                var li = ev.target.closest('li.list-group-item'); if (!li) return;
+                var id = li.dataset.reqId;
+                if (ev.target.closest('.req-del')){
+                    window.monRequests = window.monRequests.filter(function(r){ return r.id !== id; });
+                    renderList();
+                    if (typeof showToast==='function') showToast({ title:'Excluído', message:'Pedido removido.', variant:'secondary' });
+                }
+            });
+            listEl.addEventListener('change', function(ev){
+                if (!ev.target.classList.contains('req-toggle')) return;
+                var li = ev.target.closest('li.list-group-item'); if (!li) return;
+                var id = li.dataset.reqId;
+                var req = window.monRequests.find(function(r){ return r.id === id; });
+                if (!req) return;
+                req.active = !!ev.target.checked;
+                renderList();
+                if (typeof showToast==='function'){
+                    showToast({ title:'Status', message: req.active ? 'Pedido ativado.' : 'Pedido inativado.', variant: req.active ? 'success' : 'secondary' });
+                }
+            });
+        }
+
+        renderList();
+    })();
+</script>
+
+
 <script src="https://maps.google.com/maps/api/js?v=beta&libraries=visualization,drawing,geometry,places&key=AIzaSyCd3zT_keK2xr7T6ujvR3TvLj5c9u0PtsM&callback=Function.prototype"></script>
+
+<div id="toast-ctr" class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1080;"></div>
+
 </body>
 </html>
