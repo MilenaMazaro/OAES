@@ -1,17 +1,16 @@
 [
-  {"id":"FLOW_AVG_SPEED","label":"Velocidade Média","unit":"km/h","source":"FLOW"},
-  {"id":"FLOW_TRAVEL_TIME","label":"Tempo Médio de Travessia","unit":"min","source":"FLOW"},
-  {"id":"FLOW_SLOW_EVENTS","label":"Eventos de Lentidão","unit":"count","source":"FLOW"},
-  {"id":"FLOW_SLOW_DURATION","label":"Duração Média da Lentidão","unit":"min","source":"FLOW"},
-  {"id":"FLOW_CONGESTION_INDEX","label":"Índice de Congestionamento","unit":"%","source":"FLOW"},
+  {"id":"vel_media","name":"Velocidade Média (km/h)","group":"Fluxo"},
+  {"id":"tempo_travessia","name":"Tempo Médio de Travessia (min)","group":"Fluxo"},
+  {"id":"eventos_lentidao","name":"Contagem de Eventos de Lentidão","group":"Fluxo"},
+  {"id":"duracao_lentidao","name":"Duração Média da Lentidão (min)","group":"Fluxo"},
+  {"id":"indice_congestionamento","name":"Índice de Congestionamento (%)","group":"Fluxo"},
 
-  {"id":"INC_ACCIDENTS","label":"Acidentes","unit":"count","source":"INCIDENT"},
-  {"id":"INC_STOPPED_LANE","label":"Parados na Via","unit":"count","source":"INCIDENT"},
-  {"id":"INC_STOPPED_SHOULDER","label":"Parados no Acostamento","unit":"count","source":"INCIDENT"},
-  {"id":"INC_POTHOLES","label":"Buracos","unit":"count","source":"INCIDENT"},
-  {"id":"INC_FLOOD","label":"Alagamentos","unit":"count","source":"INCIDENT"},
-  {"id":"INC_OTHER_HAZARDS","label":"Outros Perigos","unit":"count","source":"INCIDENT"},
+  {"id":"acidentes","name":"Contagem de Acidentes","group":"Incidentes"},
+  {"id":"veiculos_parados","name":"Veículos Parados (via/acostamento)","group":"Incidentes"},
+  {"id":"buracos","name":"Buracos na Via","group":"Incidentes"},
+  {"id":"alagamentos","name":"Alagamentos","group":"Incidentes"},
+  {"id":"outros_perigos","name":"Outros Perigos","group":"Incidentes"},
 
-  {"id":"ASSET_CAM_COUNT","label":"Câmeras Associadas","unit":"count","source":"ASSET"},
-  {"id":"ASSET_CAM_UPTIME","label":"Câmeras Online","unit":"%","source":"ASSET"}
+  {"id":"qtd_cameras","name":"Quantidade de Câmeras Associadas","group":"Ativos"},
+  {"id":"status_cameras","name":"Status das Câmeras (% online)","group":"Ativos"}
 ]

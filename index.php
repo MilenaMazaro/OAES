@@ -1,4 +1,4 @@
-<?php /* SIIM • OAEs + Alertas • Painel direito único (OAEs/Indicadores) */ ?>
+<?php /* SIIM • OAEs + Alertas + Gerenciar Tipos/Indicadores + Monitoramento */ ?>
 <!doctype html>
 <html lang="pt-br">
 <head>
@@ -10,25 +10,19 @@
     <style>
         :root{ --nav-h:56px; --rail-w:64px; --panel-w:420px; --rail-bg:#3F5660; --orange:#ff7a00; }
         html,body{ height:100%; } body{ overflow:hidden; background:#f6f7fb; }
-
         .navbar-green{ background:#3F5660 !important; }
         .navbar-green .navbar-brand{ color:#fff; }
         .navbar-green .btn-outline-light{ color:#fff; border-color:#fff; }
-        .navbar-green .btn-outline-light:hover,
-        .navbar-green .btn-outline-light.active{ color:#3F5660; background:#fff; border-color:#fff; }
-
-        .btn-orange{
-            --bs-btn-color:#fff; --bs-btn-bg:var(--orange); --bs-btn-border-color:var(--orange);
+        .navbar-green .btn-outline-light:hover,.navbar-green .btn-outline-light.active{ color:#3F5660; background:#fff; border-color:#fff; }
+        .btn-orange{ --bs-btn-color:#fff; --bs-btn-bg:var(--orange); --bs-btn-border-color:var(--orange);
             --bs-btn-hover-bg:#e56e00; --bs-btn-hover-border-color:#e56e00;
             --bs-btn-active-bg:#cc6200; --bs-btn-active-border-color:#cc6200;
-            --bs-btn-focus-shadow-rgb:255,122,0;
-        }
-
+            --bs-btn-focus-shadow-rgb:255,122,0; }
         #map{ height:calc(100vh - var(--nav-h)); }
 
         .right-shell{ position:absolute; z-index:1000; top:var(--nav-h); right:0; height:calc(100vh - var(--nav-h)); display:flex; flex-direction:row-reverse; pointer-events:none; }
         .rail{ width:var(--rail-w); height:100%; background:var(--rail-bg); display:flex; flex-direction:column; align-items:center; gap:.75rem; padding:.75rem .5rem; box-shadow:-2px 0 8px rgba(0,0,0,.18); pointer-events:auto; }
-        .rail .rail-btn{ width:44px; height:44px; border:0; border-radius:10px; display:flex; align-items:center; justify-content:center; background:#4c6570; color:#fff; font-size:1.25rem; transition:transform .15s ease, background .2s ease; }
+        .rail .rail-btn{ width:44px; height:44px; border:0; border-radius:10px; display:flex; align-items:center; justify-content:center; background:#4c6570; color:#fff; font-size:1.25rem; transition:transform .15s, background .2s; }
         .rail .rail-btn:hover{ background:#5a7683; transform:translateY(-1px); }
         .rail .rail-btn.primary{ background:#0b8c7d; }
         .rail .rail-btn.primary:hover{ background:#0aa08f; }
@@ -36,10 +30,8 @@
         .sidepanel{ width:0; height:100%; overflow:hidden; background:#fff; border-left:1px solid rgba(0,0,0,.1); box-shadow:-10px 0 18px rgba(0,0,0,.12); pointer-events:auto; transition:width .35s cubic-bezier(.22,.61,.36,1); }
         .right-shell.open .sidepanel{ width:var(--panel-w); }
         @media(max-width:540px){ .right-shell.open .sidepanel{ width:min(95vw, var(--panel-w)); } }
-
         .sp-body{ opacity:0; transition:opacity .25s .12s ease; height:100%; overflow:auto; }
         .right-shell.open .sp-body{ opacity:1; }
-
         .sp-header{ display:flex; align-items:center; justify-content:space-between; padding:.6rem .85rem; border-bottom:1px solid rgba(0,0,0,.08); background:#f9fafb; }
         .sp-header .title{ font-weight:600; }
 
@@ -71,6 +63,10 @@
         .badge-t1{ background:#a5d6a7; } .badge-t2{ background:#ffe082; } .badge-t3{ background:#ffcc80; } .badge-t4{ background:#ef9a9a; } .badge-t5{ background:#ffab91; }
 
         .sp-body .panel-pad{ height:20px; } @media (max-height:740px){ .sp-body .panel-pad{ height:60px; } }
+        .feed{ max-height:320px; overflow:auto; }
+        .feed .item{ border-bottom:1px solid rgba(0,0,0,.075); padding:.5rem .25rem; }
+        .feed .t{ font-weight:600; }
+        .feed .d{ color:#6b7280; font-size:.85rem; }
     </style>
 </head>
 <body>
@@ -102,6 +98,7 @@
         </div>
 
         <div class="sp-body p-3">
+            <!-- ===== Painel OAEs ===== -->
             <div id="panel-oae">
                 <div class="small text-muted mb-2">Selecione uma ou mais OAEs para filtrar os alertas do Waze em um raio de 500m.</div>
 
@@ -128,6 +125,7 @@
                     <div id="oae-types" class="d-grid gap-2 mb-3"></div>
                 </div>
 
+                <!-- Resumo dos alertas no mapa -->
                 <div id="alerts-summary" class="mb-3 d-none">
                     <h6 class="mb-2">Alertas</h6>
                     <div class="alerts-grid">
@@ -169,7 +167,63 @@
                 <div class="panel-pad"></div>
             </div>
 
+            <!-- ===== Painel: Alertas por OAE (monitoramento) ===== -->
+            <div id="panel-alerts" class="d-none">
+                <div class="mb-2">
+                    <div class="small text-muted">Selecione OAEs digitando (chips) ou clicando no mapa. Marque as categorias e ligue <b>Monitorar</b> para receber novos alertas (polling 20s, com deduplicação).</div>
+                </div>
+
+                <div class="mb-2">
+                    <div id="mon-oae-ms" class="chips-control">
+                        <div id="mon-oae-chips"></div>
+                        <input id="mon-oae-input" class="chips-input" placeholder="Buscar OAE..." list="mon-oaes-list" autocomplete="off">
+                        <datalist id="mon-oaes-list"></datalist>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input mon-cat" type="checkbox" id="mon-acc" data-cat="ACCIDENT" checked>
+                        <label class="form-check-label" for="mon-acc">Acidente</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input mon-cat" type="checkbox" id="mon-haz" data-cat="HAZARD" checked>
+                        <label class="form-check-label" for="mon-haz">Perigo</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input mon-cat" type="checkbox" id="mon-jam" data-cat="JAM" checked>
+                        <label class="form-check-label" for="mon-jam">Congestionamento</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input mon-cat" type="checkbox" id="mon-rc" data-cat="ROAD_CLOSED" checked>
+                        <label class="form-check-label" for="mon-rc">Fechamento</label>
+                    </div>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="mon-switch">
+                    <label class="form-check-label" for="mon-switch">Monitorar</label>
+                </div>
+
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header py-2">
+                        <div class="fw-semibold">Novos alertas</div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="mon-feed" class="feed"></div>
+                    </div>
+                </div>
+
+                <div class="panel-pad"></div>
+            </div>
+
+            <!-- ===== Painel Gerenciar Tipos & Indicadores ===== -->
             <div id="panel-ind" class="d-none">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="fw-semibold">Cadastro e herança de indicadores</div>
+                    <button id="btn-new-oae" class="btn btn-sm btn-primary">Cadastrar OAE</button>
+                </div>
+                <div class="small text-muted mb-2">Associe os tipos, indicadores e cadastre OAEs com auto-preenchimento.</div>
                 <div id="indicadores-content" class="small text-muted">Carregando…</div>
                 <div class="panel-pad"></div>
             </div>
@@ -179,26 +233,52 @@
     <div class="rail">
         <button id="btn-toggle" class="rail-btn" title="Abrir/fechar painel"><i class="bi bi-chevron-left"></i></button>
         <button id="btn-oaes" class="rail-btn primary" title="OAEs"><i class="bi bi-building"></i></button>
-        <button id="btn-alerts" class="rail-btn" title="Alertas (toggle visual)"><i class="bi bi-bell-fill"></i></button>
+        <button id="btn-bell" class="rail-btn" title="Alertas por OAE"><i class="bi bi-bell-fill"></i></button>
         <button id="btn-indicadores" class="rail-btn" title="Gerenciar Indicadores"><i class="bi bi-sliders"></i></button>
     </div>
 </div>
 
+<!-- === Modal: Cadastrar OAE === -->
+<div class="modal fade" id="modalNewOAE" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog"><div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cadastrar OAE</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Nome da OAE</label>
+                    <input id="oae-name" class="form-control" placeholder="Ex.: Vd Bresser">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Tipo</label>
+                    <select id="oae-type" class="form-select"></select>
+                    <div id="oae-preset-hint" class="form-text">Selecione o tipo para herdar os indicadores padrão.</div>
+                </div>
+                <div id="oae-preset-list" class="small"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button id="btn-save-oae" class="btn btn-primary">Salvar</button>
+            </div>
+        </div></div>
+</div>
+
 <script>
-    /* ===== Estado ===== */
-    var map, info;
-    var oaeLayers = [];
-    var typePolylines = {};
-    var alertMarkers = [];
-    var markersByCat = { ACCIDENT:[], HAZARD:[], JAM:[], ROAD_CLOSED:[] };
+    /* ===== Estado global ===== */
+    var map, info, activeTab = 'oae';
+    var oaeLayers = [], typePolylines = {};
+    var alertMarkers = [], markersByCat = { ACCIDENT:[], HAZARD:[], JAM:[], ROAD_CLOSED:[] };
     var layersEnabled = { oaes:true, alerts:true };
     var typeState = {};
-
-    // Seleção por ID do polyline
-    var selectedOAEIds = [];            // [polylineId, ...]
+    var selectedOAEIds = [];              // painel OAEs
+    var monSelectedOAEIds = [];           // painel Alertas/monitoramento
     var allOaeNames = [];
-    var oaeAreaRectsById = {};          // { [polylineId]: Rectangle }
+    var oaeAreaRectsById = {};
     var polyIdSeq = 1;
+
+    var monCats = { ACCIDENT:true, HAZARD:true, JAM:true, ROAD_CLOSED:true };
+    var monTimer = null, monSeen = {}; // dedupe
 
     var CAT_STYLE = {
         ACCIDENT:{ fill:'#ffa726', glyph:'🚗' },
@@ -213,27 +293,38 @@
     };
 
     function setStatus(t){ var el=document.getElementById('status'); if(el) el.textContent = t||''; }
-
     function openPanel(){ document.getElementById('right-shell').classList.add('open'); }
     function togglePanel(){ document.getElementById('right-shell').classList.toggle('open'); }
 
+    /* ===== Navegação de painéis ===== */
     function setPanel(tab){
+        activeTab = tab;
         var title = document.getElementById('sp-title');
         var actions = document.getElementById('sp-actions');
-        var oae = document.getElementById('panel-oae');
-        var ind = document.getElementById('panel-ind');
+        var pOae = document.getElementById('panel-oae');
+        var pBell= document.getElementById('panel-alerts');
+        var pInd = document.getElementById('panel-ind');
+
+        pOae.classList.add('d-none'); pBell.classList.add('d-none'); pInd.classList.add('d-none');
+
         if (tab === 'ind') {
             title.textContent = 'Gerenciar Tipos & Indicadores';
-            actions.innerHTML = '';
-            oae.classList.add('d-none'); ind.classList.remove('d-none'); openPanel();
+            pInd.classList.remove('d-none');
+        } else if (tab === 'alerts') {
+            title.textContent = 'Alertas por OAE (monitoramento)';
+            pBell.classList.remove('d-none');
         } else {
             title.textContent = 'Obras de Arte Especiais (OAEs)';
-            actions.innerHTML = '<button id="btn-clear-filter" class="btn btn-outline-secondary btn-sm">Limpar Filtro</button>';
-            document.getElementById('btn-clear-filter').onclick = clearOaeFilter;
-            ind.classList.add('d-none'); oae.classList.remove('d-none'); openPanel();
+            pOae.classList.remove('d-none');
         }
+        actions.innerHTML = '<button id="btn-clear-filter" class="btn btn-outline-secondary btn-sm">Limpar Filtro</button>';
+        document.getElementById('btn-clear-filter').onclick = function(){
+            if (activeTab==='alerts') clearMonOaEs(); else clearOaeFilter();
+        };
+        openPanel();
     }
 
+    /* ===== Init ===== */
     function initMap(){
         map = new google.maps.Map(document.getElementById('map'), {
             center:{lat:-23.55,lng:-46.63}, zoom:12,
@@ -246,7 +337,7 @@
             layersEnabled.oaes = btn.classList.contains('active');
             btn.setAttribute('data-on', layersEnabled.oaes?'1':'0');
             updateOAEsVisibility();
-            document.getElementById('sidepanel').classList.toggle('disabled', !layersEnabled.oaes);
+            document.getElementById('sidepanel').classList.toggle('disabled', !layersEnabled.oaes && activeTab!=='alerts');
         };
         document.getElementById('toggle-alerts').onclick = function(ev){
             var btn = ev.currentTarget; btn.classList.toggle('active');
@@ -258,24 +349,46 @@
         document.getElementById('btn-toggle').onclick = togglePanel;
         document.getElementById('btn-oaes').onclick = function(){ setPanel('oae'); };
         document.getElementById('btn-indicadores').onclick = function(){ setPanel('ind'); };
-        document.getElementById('btn-alerts').onclick = function(){ document.getElementById('toggle-alerts').click(); };
+        document.getElementById('btn-bell').onclick = function(){ setPanel('alerts'); };
 
         document.getElementById('btn-clear').onclick = clearAll;
         document.getElementById('btn-all').onclick  = function(){ setAllTypes(true); };
         document.getElementById('btn-none').onclick = function(){ setAllTypes(false); };
-        document.getElementById('btn-clear-filter').onclick = clearOaeFilter;
 
+        // OAEs (chips)
         var input = document.getElementById('oae-input');
         input.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); tryAddOAE(input.value); }});
         input.addEventListener('change', function(){ tryAddOAE(input.value); });
         input.addEventListener('focus', openPanel);
 
+        // Monitor (chips)
+        var minput = document.getElementById('mon-oae-input');
+        minput.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); tryAddMonOAE(minput.value); }});
+        minput.addEventListener('change', function(){ tryAddMonOAE(minput.value); });
+
+        // Monitor categorias
+        var monCbs=document.querySelectorAll('.mon-cat');
+        for (var i=0;i<monCbs.length;i++){
+            monCbs[i].onchange=function(ev){
+                var cat=ev.target.getAttribute('data-cat'); monCats[cat]=ev.target.checked;
+            };
+        }
+        // Monitor switch
+        document.getElementById('mon-switch').onchange=function(ev){
+            if (ev.target.checked){ startMonitor(); } else { stopMonitor(); }
+        };
+
         fillTrafficSummary();
         updateWazeUpdated();
         fetchOAEs();
+
+        // painel gestão tipos
+        var cont = document.getElementById('indicadores-content');
+        cont.innerHTML = '<div class="alert alert-info mb-2">Use o botão <b>Cadastrar OAE</b> para adicionar rapidamente uma OAE herdando os indicadores do Tipo.</div>';
+        document.getElementById('btn-new-oae').onclick = openNewOaeModal;
     }
 
-    /* ===== OAEs ===== */
+    /* ===== OAEs (mapa) ===== */
     function fetchOAEs(){
         setStatus('Carregando OAEs...');
         fetch('api/oaes.php?mock=1').then(r=>r.json()).then(function(fc){
@@ -283,32 +396,22 @@
             setStatus('OAEs carregadas: '+oaeLayers.length+'. Use o campo acima para selecionar.');
         }).catch(function(e){ console.error(e); setStatus('Falha ao carregar OAEs (veja o console).'); });
     }
-
     var CLICK_TOLERANCE_M = 8;
 
-    // aplica/retira destaque com “bordinha” (outline preto por baixo)
     function setSelectedStyle(pl, isSelected){
         if (!pl) return;
-        // cria/mostra outline
         if (isSelected){
             if (!pl.__outline){
                 pl.__outline = new google.maps.Polyline({
-                    path: pl.getPath(),
-                    strokeColor: '#000000',
-                    strokeOpacity: 1.0,
-                    strokeWeight: (pl.get('strokeWeight') || 4) + 3, // ligeiramente mais largo
-                    zIndex: (pl.get('zIndex') || 0)    // fica por baixo
+                    path: pl.getPath(), strokeColor:'#000', strokeOpacity:1.0,
+                    strokeWeight:(pl.get('strokeWeight')||4)+3, zIndex:(pl.get('zIndex')||0)
                 });
             }
-            if (layersEnabled.oaes && typeState[pl.__oaeType]) {
-                pl.__outline.setMap(map);
-            }
-            // mantém a linha original por cima
-            pl.setOptions({ zIndex: (pl.get('zIndex') || 0) + 1 });
+            if (layersEnabled.oaes && typeState[pl.__oaeType]) pl.__outline.setMap(map);
+            pl.setOptions({ zIndex:(pl.get('zIndex')||0)+1 });
         } else {
-            if (pl.__outline){ pl.__outline.setMap(null); }
-            // volta zIndex padrão
-            pl.setOptions({ zIndex: null });
+            if (pl.__outline) pl.__outline.setMap(null);
+            pl.setOptions({ zIndex:null });
         }
     }
 
@@ -337,7 +440,6 @@
             pl.__id = polyIdSeq++;
             pl.__oaeName = oaeName;
             pl.__oaeType = oaeType;
-            pl.__baseColor = color;
 
             if(!typePolylines[oaeType]) typePolylines[oaeType]=[];
             typePolylines[oaeType].push(pl);
@@ -345,22 +447,19 @@
 
             pl.addListener('click', function(ev){
                 if (!google.maps.geometry.poly.isLocationOnEdge(ev.latLng, pl, CLICK_TOLERANCE_M)) return;
-                addOAEByPolyline(pl, true);
+                if (activeTab==='alerts'){ addMonOAEByPolyline(pl, true); }
+                else { addOAEByPolyline(pl, true); }
                 showOAEInfo(pl, ev.latLng);
-                setPanel('oae');
+                openPanel();
             });
         });
 
         fillOaeSuggestions();
+        fillMonOaeSuggestions();
     }
 
-    function getPolylinesByName(name){
-        return oaeLayers.filter(pl => pl.__oaeName === name);
-    }
-    function getPolylineById(id){
-        for (var i=0;i<oaeLayers.length;i++) if (oaeLayers[i].__id===id) return oaeLayers[i];
-        return null;
-    }
+    function getPolylinesByName(name){ return oaeLayers.filter(pl => pl.__oaeName === name); }
+    function getPolylineById(id){ for (var i=0;i<oaeLayers.length;i++) if (oaeLayers[i].__id===id) return oaeLayers[i]; return null; }
 
     function showOAEInfo(pl, anchor){
         var lenM = google.maps.geometry.spherical.computeLength(pl.getPath());
@@ -370,7 +469,7 @@
         info.setContent(html); info.setPosition(pos); info.open(map);
     }
 
-    /* ===== Tipos ===== */
+    /* ===== Tipos (filtro) ===== */
     function buildTypeFilter(types){
         var box = document.getElementById('oae-types'); box.innerHTML='';
         types.forEach(function(t){
@@ -393,10 +492,7 @@
         typeState[type]=on;
         (typePolylines[type]||[]).forEach(function(pl){
             pl.setMap(layersEnabled.oaes && on ? map : null);
-            // sincroniza outline conforme visibilidade
-            if (selectedOAEIds.indexOf(pl.__id)!==-1){
-                setSelectedStyle(pl, layersEnabled.oaes && on);
-            }
+            if (selectedOAEIds.indexOf(pl.__id)!==-1) setSelectedStyle(pl, layersEnabled.oaes && on);
         });
     }
     function setAllTypes(on){
@@ -410,15 +506,13 @@
                 pl.setMap(layersEnabled.oaes && typeState[t] ? map : null);
                 if (selectedOAEIds.indexOf(pl.__id)!==-1){
                     setSelectedStyle(pl, layersEnabled.oaes && typeState[t]);
-                } else {
-                    setSelectedStyle(pl, false);
-                }
+                } else setSelectedStyle(pl, false);
             });
         }
     }
     function updateTypesBadge(){ var n=0; for(var k in typeState){ if(typeState.hasOwnProperty(k) && typeState[k]) n++; } var b=document.getElementById('types-badge'); if(b) b.textContent=n; }
 
-    /* ===== Busca/Chips ===== */
+    /* ===== Busca/Chips OAEs (painel OAEs) ===== */
     function fillOaeSuggestions(){
         var namesMap={}, arr=[];
         oaeLayers.forEach(function(pl){ namesMap[pl.__oaeName]=true; });
@@ -439,16 +533,13 @@
     function drawAreaForPolyline(pl, meters){
         meters = meters || 500;
         var path = pl.getPath(); if(!path || path.getLength()===0) return;
-
         var b=new google.maps.LatLngBounds();
         for (var i=0;i<path.getLength();i++) b.extend(path.getAt(i));
         var c=b.getCenter();
-
         var n=google.maps.geometry.spherical.computeOffset(c,meters,0);
         var s=google.maps.geometry.spherical.computeOffset(c,meters,180);
         var e=google.maps.geometry.spherical.computeOffset(c,meters,90);
         var w=google.maps.geometry.spherical.computeOffset(c,meters,270);
-
         if (oaeAreaRectsById[pl.__id]) oaeAreaRectsById[pl.__id].setMap(null);
         oaeAreaRectsById[pl.__id] = new google.maps.Rectangle({
             bounds:{ north:n.lat(), south:s.lat(), east:e.lng(), west:w.lng() },
@@ -456,40 +547,27 @@
             fillColor:'#e53935', fillOpacity:.18, map:map
         });
     }
-
     function addOAEByPolyline(pl, zoom){
-        if (selectedOAEIds.indexOf(pl.__id) !== -1) return; // já selecionada
+        if (selectedOAEIds.indexOf(pl.__id) !== -1) return;
         selectedOAEIds.push(pl.__id);
         renderChips();
-
-        // garantir tipo ligado
         if (typeState[pl.__oaeType] === false) {
-            typeState[pl.__oaeType] = true;
-            updateOAEsVisibility();
-            var id = 't_' + btoa(pl.__oaeType).replace(/=/g,'');
-            var cb = document.getElementById(id); if (cb) cb.checked = true;
+            typeState[pl.__oaeType] = true; updateOAEsVisibility();
+            var id = 't_' + btoa(pl.__oaeType).replace(/=/g,''); var cb = document.getElementById(id); if (cb) cb.checked = true;
         }
-
-        setSelectedStyle(pl, true);
-        drawAreaForPolyline(pl, 500);
-
+        setSelectedStyle(pl, true); drawAreaForPolyline(pl, 500);
         if (zoom) fitToSelectedOAEs({ maxZoom: 15 });
         fetchAlertsForSelected();
         setStatus('OAEs selecionadas: ' + selectedOAEIds.length);
     }
-
     function removeOAEById(id){
         selectedOAEIds = selectedOAEIds.filter(x=>x!==id);
         renderChips();
-
         if (oaeAreaRectsById[id]) { oaeAreaRectsById[id].setMap(null); delete oaeAreaRectsById[id]; }
         var pl = getPolylineById(id); if (pl) setSelectedStyle(pl, false);
-
-        fitToSelectedOAEs({ maxZoom: 15 });
-        fetchAlertsForSelected();
+        fitToSelectedOAEs({ maxZoom: 15 }); fetchAlertsForSelected();
         setStatus('OAEs selecionadas: ' + selectedOAEIds.length);
     }
-
     function renderChips(){
         var box=document.getElementById('oae-chips'); box.innerHTML='';
         selectedOAEIds.forEach(function(id){
@@ -500,18 +578,15 @@
             box.appendChild(chip);
         });
     }
-
     function fitToSelectedOAEs(opts){
         if(!selectedOAEIds.length) return;
         var b = new google.maps.LatLngBounds(), any = false;
-
         selectedOAEIds.forEach(function(id){
             var pl = getPolylineById(id); if (!pl) return;
             var path = pl.getPath();
             for (var i=0; i<path.getLength(); i++) { b.extend(path.getAt(i)); any = true; }
-            setSelectedStyle(pl, true); // garante a borda
+            setSelectedStyle(pl, true);
         });
-
         if (!any) return;
         var padding = (opts && opts.padding) || { top:40, left:40, bottom:40, right:40 + 420 + 64 + 16 };
         var maxZoom = (opts && opts.maxZoom) || 15;
@@ -522,43 +597,31 @@
             if (!usedPadding) { var shiftRight = (420 + 64) / 2; map.panBy(-shiftRight, 0); }
         });
     }
-
     function clearOaeFilter(){
         selectedOAEIds.slice().forEach(removeOAEById);
-        selectedOAEIds = [];
-        renderChips();
-        clearAlerts();
-        setStatus('Filtro limpo. Selecione OAEs para ver alertas.');
+        selectedOAEIds = []; renderChips();
+        clearAlerts(); setStatus('Filtro limpo. Selecione OAEs para ver alertas.');
     }
 
-    /* ===== ALERTAS ===== */
+    /* ===== ALERTAS (render no mapa) ===== */
     function fetchAlertsForSelected(){
         clearAlerts();
         if(!selectedOAEIds.length){ updateSummaryCounts(); return Promise.resolve(0); }
-
         var namesSet = {};
-        selectedOAEIds.forEach(function(id){
-            var pl = getPolylineById(id); if (pl) namesSet[pl.__oaeName]=true;
-        });
+        selectedOAEIds.forEach(function(id){ var pl = getPolylineById(id); if (pl) namesSet[pl.__oaeName]=true; });
         var names = Object.keys(namesSet);
         var reqs = names.map(function(n){
             return fetch('api/alerts.php?mock=1&oae_name='+encodeURIComponent(n))
-                .then(r=>r.json())
-                .catch(()=>({type:'FeatureCollection',features:[]}));
+                .then(r=>r.json()).catch(()=>({type:'FeatureCollection',features:[]}));
         });
         return Promise.all(reqs).then(function(arr){
             var all={type:'FeatureCollection',features:[]};
-            arr.forEach(function(data){
-                var fc=normalizeAlertsToFC(data,null);
-                all.features = all.features.concat(fc.features||[]);
-            });
+            arr.forEach(function(data){ var fc=normalizeAlertsToFC(data,null); all.features = all.features.concat(fc.features||[]); });
             var count=renderAlerts(all);
             setStatus('OAEs selecionadas: '+selectedOAEIds.length+' • Alertas: '+count);
-            updateWazeUpdated();
-            return count;
+            updateWazeUpdated(); return count;
         });
     }
-
     function normalizeAlertsToFC(data, nameFilter){
         var features=[];
         if(data && data.type && /featurecollection/i.test(data.type) && data.features && data.features.length){
@@ -566,9 +629,8 @@
                 if(!f.properties) return false;
                 if(!nameFilter) return (f.geometry && f.geometry.type==='Point');
                 var n = f.properties.oae_name || f.properties.name || '';
-                return (f.geometry && f.geometry.type==='Point') && (nameFilter ? n && n.toLowerCase().trim()===nameFilter.toLowerCase().trim() : true);
-            });
-            return { type:'FeatureCollection', features:features };
+                return (f.geometry && f.geometry.type==='Point') && (n && n.toLowerCase().trim()===nameFilter.toLowerCase().trim());
+            }); return { type:'FeatureCollection', features:features };
         }
         if(data && data.alerts && data.alerts.length){
             data.alerts.forEach(function(a){
@@ -578,8 +640,7 @@
                 features.push({ type:'Feature', properties:{
                         name:n, type:a.type||null, alert_type:a.alert_type||null, street:a.street||null, date:a.date||null, hour:a.hour||null
                     }, geometry:a.point.geometry });
-            });
-            return { type:'FeatureCollection', features:features };
+            }); return { type:'FeatureCollection', features:features };
         }
         if(data && data.jams && data.jams.length){
             data.jams.forEach(function(a){
@@ -589,12 +650,10 @@
                 features.push({ type:'Feature', properties:{
                         name:n, type:a.type||null, alert_type:a.alert_type||'JAM', street:a.street||null, date:a.date||null, hour:a.hour||null
                     }, geometry:a.point.geometry });
-            });
-            return { type:'FeatureCollection', features:features };
+            }); return { type:'FeatureCollection', features:features };
         }
         return { type:'FeatureCollection', features:[] };
     }
-
     function resetMarkersByCat(){ for(var k in markersByCat){ if(!markersByCat.hasOwnProperty(k)) continue; markersByCat[k].forEach(function(m){ m.setMap(null); }); markersByCat[k]=[]; } }
     function catKeyFrom(type){
         if(!type) return 'JAM';
@@ -616,7 +675,6 @@
     function renderAlerts(fc){
         if(!fc || !fc.features) return 0;
         resetMarkersByCat();
-
         fc.features.forEach(function(f){
             if(!f.geometry || f.geometry.type!=='Point') return;
             var lng=f.geometry.coordinates[0], lat=f.geometry.coordinates[1];
@@ -624,11 +682,7 @@
             var cat=catKeyFrom(p.alert_type || p.type);
             var sty=CAT_STYLE[cat] || {fill:'#ffb300', glyph:'•'};
             var icon=makeGlyphIcon(sty.fill, sty.glyph);
-
-            var m=new google.maps.Marker({
-                position:{lat:lat,lng:lng}, icon:icon, zIndex:100,
-                map: layersEnabled.alerts ? map : null
-            });
+            var m=new google.maps.Marker({ position:{lat:lat,lng:lng}, icon:icon, zIndex:100, map: layersEnabled.alerts ? map : null });
             m.addListener('click', function(){
                 var title=(p.alert_type || p.type || 'Alerta').replace(/_/g,' ');
                 var when=[p.date,p.hour].filter(Boolean).join(' ');
@@ -639,7 +693,6 @@
             alertMarkers.push(m);
             markersByCat[cat].push(m);
         });
-
         updateSummaryCounts(); bindSummaryToggles(); updateAlertsVisibility();
         return alertMarkers.length;
     }
@@ -667,7 +720,7 @@
         var box=document.getElementById('alerts-summary');
         function on(cat){ var sw=box.querySelector('[data-cat="'+cat+'"] .cat-toggle'); return layersEnabled.alerts && sw && sw.checked; }
         for(var cat in markersByCat){ if(!markersByCat.hasOwnProperty(cat)) continue;
-            markersByCat[cat].forEach(function(m){ m.setMap(on(cat)?map:null); });
+            (markersByCat[cat]||[]).forEach(function(m){ m.setMap(on(cat)?map:null); });
         }
     }
 
@@ -676,14 +729,11 @@
     function clearAll(){
         oaeLayers.forEach(function(l){ l.setMap(null); }); oaeLayers.length=0;
         for(var k in typePolylines){ if(typePolylines.hasOwnProperty(k)) delete typePolylines[k]; }
-
         for (var id in oaeAreaRectsById){ if (oaeAreaRectsById[id]) oaeAreaRectsById[id].setMap(null); }
         oaeAreaRectsById = {};
-
-        clearOaeFilter();
+        clearOaeFilter(); clearMonOaEs(); stopMonitor();
         setStatus('Camadas limpas. Recarregue para buscar novamente.');
     }
-
     function updateWazeUpdated(){
         var el=document.getElementById('waze-updated'); var dt=new Date();
         function pad(n){ n=String(n); return n.length<2 ? '0'+n : n; }
@@ -703,6 +753,151 @@
             li.className='list-group-item d-flex justify-content-between align-items-center';
             li.innerHTML='<span>'+lv.name+'</span><span class="badge-traffic '+lv.cls+'">'+lv.km+'</span>';
             ul.appendChild(li);
+        });
+    }
+
+    /* ===== Monitoramento (painel Alertas) ===== */
+    function fillMonOaeSuggestions(){
+        var dl=document.getElementById('mon-oaes-list'); if(!dl) return; dl.innerHTML='';
+        allOaeNames.forEach(function(n){ var o=document.createElement('option'); o.value=n; dl.appendChild(o); });
+    }
+    function tryAddMonOAE(value){
+        var name=(value||'').trim(); if(!name) return;
+        var found = allOaeNames.find(n=>n.toLowerCase()===name.toLowerCase()) || name;
+        var pl = getPolylinesByName(found)[0];
+        if (pl) addMonOAEByPolyline(pl, true);
+        document.getElementById('mon-oae-input').value='';
+    }
+    function addMonOAEByPolyline(pl, zoom){
+        if (monSelectedOAEIds.indexOf(pl.__id)!==-1) return;
+        monSelectedOAEIds.push(pl.__id);
+        renderMonChips();
+        if (zoom){
+            var b=new google.maps.LatLngBounds(); var p=pl.getPath();
+            for (var i=0;i<p.getLength();i++) b.extend(p.getAt(i));
+            map.fitBounds(b);
+        }
+    }
+    function removeMonOAEById(id){
+        monSelectedOAEIds = monSelectedOAEIds.filter(x=>x!==id);
+        renderMonChips();
+    }
+    function renderMonChips(){
+        var box=document.getElementById('mon-oae-chips'); box.innerHTML='';
+        monSelectedOAEIds.forEach(function(id){
+            var pl = getPolylineById(id); if(!pl) return;
+            var chip=document.createElement('span'); chip.className='chip';
+            chip.innerHTML='<span>'+pl.__oaeName+'</span><span class="x" title="Remover">&times;</span>';
+            chip.querySelector('.x').onclick=function(){ removeMonOAEById(id); };
+            box.appendChild(chip);
+        });
+    }
+    function clearMonOaEs(){
+        monSelectedOAEIds=[]; renderMonChips(); document.getElementById('mon-feed').innerHTML=''; monSeen={};
+    }
+    function startMonitor(){
+        if (monTimer) return;
+        monPoll(); monTimer = setInterval(monPoll, 20000);
+    }
+    function stopMonitor(){ if (monTimer){ clearInterval(monTimer); monTimer=null; } }
+    function monPoll(){
+        if (!monSelectedOAEIds.length) return;
+        var namesSet={}; monSelectedOAEIds.forEach(function(id){ var pl=getPolylineById(id); if(pl) namesSet[pl.__oaeName]=true; });
+        var names=Object.keys(namesSet); if(!names.length) return;
+
+        var reqs = names.map(function(n){
+            return fetch('api/alerts.php?mock=1&oae_name='+encodeURIComponent(n))
+                .then(r=>r.json()).catch(()=>({type:'FeatureCollection',features:[]}));
+        });
+        Promise.all(reqs).then(function(arr){
+            var all=[]; arr.forEach(function(data){
+                var fc=normalizeAlertsToFC(data,null); (fc.features||[]).forEach(function(f){ all.push(f); });
+            });
+            // filtra categorias
+            all = all.filter(function(f){
+                var cat=catKeyFrom((f.properties||{}).alert_type || (f.properties||{}).type);
+                return !!monCats[cat];
+            });
+            // ordena por data/hora (se houver)
+            // dedup e render
+            renderMonitorFeed(all);
+        });
+    }
+    function featureKey(f){
+        var p=f.properties||{}, g=f.geometry||{};
+        var cat=catKeyFrom(p.alert_type||p.type);
+        var xy=(g.coordinates||[]).join(',');
+        var dt=[p.date,p.hour].filter(Boolean).join(' ');
+        return cat+'|'+xy+'|'+dt+'|'+(p.street||'');
+    }
+    function renderMonitorFeed(features){
+        var feed=document.getElementById('mon-feed'); if(!feed) return;
+        var added=0;
+        for (var i=0;i<features.length;i++){
+            var f=features[i]; var key=featureKey(f);
+            if (monSeen[key]) continue;
+            monSeen[key]=1; added++;
+            var p=f.properties||{}, cat=catKeyFrom(p.alert_type||p.type);
+            var title=(p.alert_type||p.type||'Alerta').replace(/_/g,' ');
+            var when=[p.date,p.hour].filter(Boolean).join(' ');
+            var street=p.street||'';
+            var div=document.createElement('div'); div.className='item';
+            div.innerHTML='<div class="t">'+title+' <span class="badge bg-light text-dark">'+cat+'</span></div>'
+                + (street?'<div>'+street+'</div>':'')
+                + (when?'<div class="d">'+when+'</div>':'');
+            feed.prepend(div);
+        }
+        // limita feed
+        while (feed.children.length>100) feed.removeChild(feed.lastChild);
+        if (!feed.children.length) feed.innerHTML='<div class="text-muted p-2">Sem novos alertas.</div>';
+    }
+
+    /* ===== Modal Cadastro de OAE ===== */
+    function openNewOaeModal(){
+        fetch('api/oae_types.php').then(r=>r.json()).then(function(list){
+            var sel = document.getElementById('oae-type'); sel.innerHTML='';
+            list.forEach(function(t){ var opt=document.createElement('option'); opt.value=t.id; opt.textContent=t.name; sel.appendChild(opt); });
+            updatePresetPreview(sel.value);
+            sel.onchange = function(){ updatePresetPreview(sel.value); };
+
+            var modal = new bootstrap.Modal(document.getElementById('modalNewOAE'));
+            modal.show();
+
+            document.getElementById('btn-save-oae').onclick = function(){
+                var name = document.getElementById('oae-name').value.trim();
+                var typeId = sel.value;
+                if (!name){ alert('Informe o nome.'); return; }
+                fetch('api/oaes.php', {
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ name:name, typeId:typeId })
+                }).then(function(r){
+                    return r.text().then(function(txt){
+                        var ok = r.ok, data=null; try{ data=JSON.parse(txt); }catch(e){}
+                        if(!ok) throw new Error('HTTP '+r.status+' – '+(txt||''));
+                        if(!data || !data.ok) throw new Error('Resposta inválida: '+txt);
+                        return data;
+                    });
+                }).then(function(){ modal.hide(); alert('OAE cadastrada!'); })
+                    .catch(function(err){ console.error(err); alert('Erro de rede/servidor ao salvar OAE.\n'+String(err.message||err)); });
+            };
+        }).catch(function(){ alert('Não foi possível carregar os tipos. Verifique api/oae_types.php.'); });
+    }
+    function updatePresetPreview(typeId){
+        if (!typeId){ document.getElementById('oae-preset-list').innerHTML=''; return; }
+        Promise.all([
+            fetch('api/oae_type_indicadores.php?oaeTypeId='+encodeURIComponent(typeId)).then(r=>r.json()),
+            fetch('api/indicators.php').then(r=>r.json())
+        ]).then(function(arr){
+            var links=arr[0]||[], indicators=arr[1]||[];
+            var nameById={}; indicators.forEach(function(i){ nameById[i.id]=i.name; });
+            var html='<div class="fw-semibold mb-1">Indicadores que serão herdados:</div><ul class="mb-0">';
+            if (!links.length) html+='<li>(Nenhum definido para este tipo)</li>';
+            links.sort(function(a,b){ var wa=(a.weight!=null)?a.weight:999, wb=(b.weight!=null)?b.weight:999; return wa-wb; });
+            links.forEach(function(l){ var nm = nameById[l.indicatorId] || l.indicatorId; html+='<li>'+nm+(l.weight!=null?' <span class="text-muted">(peso '+l.weight+')</span>':'')+'</li>'; });
+            html+='</ul>';
+            document.getElementById('oae-preset-list').innerHTML = html;
+        }).catch(function(){
+            document.getElementById('oae-preset-list').innerHTML = '<div class="text-danger">Falha ao carregar os indicadores do tipo.</div>';
         });
     }
 

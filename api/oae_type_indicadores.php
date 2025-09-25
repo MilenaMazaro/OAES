@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/config.php';
 
+header('Content-Type: application/json; charset=utf-8');
+
 $path  = OAE_TYPE_INDICATORS_FILE;
 $links = json_read($path);
 $method = $_SERVER['REQUEST_METHOD'];
