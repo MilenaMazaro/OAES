@@ -67,6 +67,123 @@
         .feed .item{ border-bottom:1px solid rgba(0,0,0,.075); padding:.5rem .25rem; }
         .feed .t{ font-weight:600; }
         .feed .d{ color:#6b7280; font-size:.85rem; }
+        .table-sm td, .table-sm th{ vertical-align:middle; }
+
+
+        /* ===== Regras (tabela mais legível e responsiva) ===== */
+        #panel-alerts .rules-wrap{ position:relative; }
+
+        #panel-alerts table.rules-table{
+            border-collapse:separate; border-spacing:0; width:100%;
+        }
+        #panel-alerts table.rules-table thead th{
+            font-size:.8rem; text-transform:uppercase; letter-spacing:.02em;
+            color:#6b7280; background:#f8f9fb; position:sticky; top:0; z-index:1;
+        }
+        #panel-alerts table.rules-table td,
+        #panel-alerts table.rules-table th{
+            vertical-align:middle; padding:.65rem .75rem;
+        }
+        #panel-alerts table.rules-table tbody tr{
+            background:#fff;
+        }
+        #panel-alerts table.rules-table tbody tr+tr td{
+            border-top:1px solid rgba(0,0,0,.06);
+        }
+
+        /* colunas com largura mínima para não “quebrar” o layout */
+        #panel-alerts .col-id{ width:56px; }
+        #panel-alerts .col-scope{ min-width:220px; }
+        #panel-alerts .col-ind{ min-width:220px; }
+        #panel-alerts .col-cond{ width:110px; text-align:center; }
+        #panel-alerts .col-thr{ width:150px; }
+        #panel-alerts .col-dest{ min-width:160px; }
+        #panel-alerts .col-ch{ width:170px; }
+        #panel-alerts .col-sil{ width:110px; }
+        #panel-alerts .col-st{ width:92px; text-align:center; }
+        #panel-alerts .col-act{ width:170px; }
+
+        /* texto multi-linha sem colidir */
+        #panel-alerts .cell-wrap{ white-space:normal; line-height:1.25; }
+        #panel-alerts .small-muted{ color:#6b7280; font-size:.85rem; }
+
+        /* grupo de botões/ícones com tamanho padronizado */
+        .btn-ico{
+            --size:34px;
+            width:var(--size); height:var(--size);
+            display:inline-flex; align-items:center; justify-content:center;
+            padding:0; border-radius:.55rem;
+        }
+        .btn-ico i{ font-size:1rem; }
+
+        /* badges “pill” para canais/destinatários */
+        .badge-pill{
+            border-radius:999px; padding:.35rem .6rem; font-weight:600;
+        }
+
+        /* switch mais firme */
+        .form-switch .form-check-input{ transform:scale(1.05); cursor:pointer; }
+
+        /* ===== Mobile: vira cartões (<= 768px) ===== */
+        @media (max-width: 768px){
+            #panel-alerts table.rules-table{ display:none; }
+            #panel-alerts .rules-cards{ display:grid; gap:.65rem; }
+            #panel-alerts .rule-card{
+                background:#fff; border:1px solid rgba(0,0,0,.08);
+                border-radius:.75rem; padding:.75rem; box-shadow:0 2px 8px rgba(0,0,0,.05);
+            }
+            #panel-alerts .rule-card .line{
+                display:flex; justify-content:space-between; align-items:center; gap:.75rem;
+                padding:.25rem 0;
+            }
+            #panel-alerts .rule-card .line+.line{ border-top:1px dashed rgba(0,0,0,.08); }
+            #panel-alerts .rule-card .title{ font-weight:700; }
+            #panel-alerts .rule-card .meta{ color:#6b7280; font-size:.9rem; }
+            #panel-alerts .rule-card .actions{ display:flex; gap:.4rem; }
+        }
+
+        /* ===== Regras em cards ===== */
+        .rules-cards{
+            display:grid;
+            grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+            gap:.85rem;
+        }
+        .rule-card{
+            background:#fff;
+            border:1px solid #e5e7eb;
+            border-radius:.8rem;
+            padding:.9rem .95rem;
+            box-shadow:0 2px 10px rgba(0,0,0,.06);
+        }
+        .rule-head{ display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
+        .rule-scope{ font-weight:600; line-height:1.2; }
+        .rule-ind{ color:#4b5563; margin:.15rem 0 .5rem; }
+        .rule-metas{ display:flex; flex-wrap:wrap; gap:.35rem; margin-bottom:.5rem; }
+        .rule-metas .badge{ font-weight:600; }
+        .rule-channels{ display:flex; gap:.35rem; flex-wrap:wrap; }
+        .rule-actions{ margin-top:.75rem; }
+        .rule-actions .btn{ width:100%; }
+
+        /* ===== Detalhe da condição (cards) ===== */
+        .rule-condition{
+            background:#f8fafc;
+            border:1px solid #e5e7eb;
+            padding:.55rem .65rem;
+            border-radius:.6rem;
+            font-size:.95rem;
+            line-height:1.2;
+            margin:.4rem 0 .6rem;
+        }
+        .rule-condition .lab{ color:#475569; margin-right:.35rem; font-weight:600; }
+        .rule-condition .ind{ font-weight:700; }
+        .rule-condition .op{ font-weight:700; }
+        .rule-condition .thr{ font-weight:700; }
+        .rule-condition .unit{ color:#64748b; margin-left:.2rem; }
+
+        /* Esconde o cabeçalho da tabela no painel de Regras (cards) */
+        #panel-alerts table thead{ display:none !important; }
+
+
     </style>
 </head>
 <body>
@@ -126,7 +243,7 @@
                 </div>
 
                 <!-- Resumo dos alertas no mapa -->
-                <div id="alerts-summary" class="mb-3 d-none">
+                <div id="alerts-summary" class="mb-3">
                     <h6 class="mb-2">Alertas</h6>
                     <div class="alerts-grid">
                         <div class="alert-card card-accident" data-cat="ACCIDENT">
@@ -167,62 +284,67 @@
                 <div class="panel-pad"></div>
             </div>
 
-            <!-- ===== Painel: Alertas por OAE (monitoramento) ===== -->
+            <!-- ===== Painel: GERENCIAR ALERTAS DE OAEs (CRUD) ===== -->
             <div id="panel-alerts" class="d-none">
-                <div class="mb-2">
-                    <div class="small text-muted">Selecione OAEs digitando ou clicando no mapa.</div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="fw-semibold">Regras de alerta por indicador</div>
+                    <button id="btn-new-rule" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Nova regra</button>
                 </div>
-
-                <div class="mb-2">
-                    <div id="mon-oae-ms" class="chips-control">
-                        <div id="mon-oae-chips"></div>
-                        <input id="mon-oae-input" class="chips-input" placeholder="Buscar OAE..." list="mon-oaes-list" autocomplete="off">
-                        <datalist id="mon-oaes-list"></datalist>
-                    </div>
-                </div>
-
-                <div class="mb-3">
-                    <label for="mon-category" class="form-label mb-1">Alertas</label>
-                    <select id="mon-category" class="form-select">
-                        <option value="">Selecione uma opção</option>
-                        <option value="ACCIDENT">Acidente</option>
-                        <option value="JAM">Congestionamento</option>
-                        <option value="ROAD_CLOSED">Via interditada</option>
-                        <option value="HAZARD">Perigo</option>
-                        <option value="SEMAFORO_OFF">Semáforo desligado</option>
+                <div class="d-flex gap-2 mb-2">
+                    <input id="rule-search" class="form-control form-control-sm" placeholder="Buscar por OAE, Tipo ou Indicador…">
+                    <select id="rule-filter-status" class="form-select form-select-sm" style="max-width:160px">
+                        <option value="all">Todas</option>
+                        <option value="on">Ativas</option>
+                        <option value="off">Inativas</option>
                     </select>
                 </div>
 
-                <div class="d-grid mb-3">
-                    <button id="mon-switch" class="btn btn-primary" data-active="0">
-                        <i class="bi bi-play-circle"></i> Monitorar alerta
-                    </button>
-                    <div id="monitor-feedback" class="small mt-2 d-none"></div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Escopo</th>
+                            <th>Indicador</th>
+                            <th>Condição</th>
+                            <th>Limite</th>
+                            <th>Destinatários</th>
+                            <th>Canais</th>
+                            <th>Silêncio</th>
+                            <th>Status</th>
+                            <th class="text-end">Ações</th>
+                        </tr>
+                        </thead>
+                        <tbody id="rules-body">
+                        <tr><td colspan="10" class="text-muted">Nenhuma regra cadastrada.</td></tr>
+                        </tbody>
+                    </table>
                 </div>
+            </div>
 
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header py-2">
-                        <div class="fw-semibold">Status de Alertas</div>
-                    </div>
-                    <div class="card-body p-0">
-                        <ul id="mon-reqs" class="list-group list-group-flush small">
-                            <li class="list-group-item text-muted">
-                                Nenhum pedido de monitoramento ativo.
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-
-
-                <!-- ===== Painel Gerenciar Tipos & Indicadores ===== -->
+            <!-- ===== Painel Gerenciar Tipos & Indicadores ===== -->
             <div id="panel-ind" class="d-none">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <div class="fw-semibold">Cadastro e herança de indicadores</div>
                     <button id="btn-new-oae" class="btn btn-sm btn-primary">Cadastrar OAE</button>
                 </div>
                 <div class="small text-muted mb-2">Associe os tipos, indicadores e cadastre OAEs com auto-preenchimento.</div>
-                <div id="indicadores-content" class="small text-muted">Carregando…</div>
+
+                <div class="mb-2 d-flex justify-content-between align-items-center">
+                    <button id="btn-new-type" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i> Novo tipo</button>
+                    <input id="type-search" class="form-control form-control-sm" style="max-width:220px" placeholder="Buscar tipo…">
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead class="table-light">
+                        <tr>
+                            <th>#</th><th>Tipo</th><th>Descrição</th><th>Indicadores</th><th class="text-end">Ações</th>
+                        </tr>
+                        </thead>
+                        <tbody id="types-body"><tr><td colspan="5" class="text-muted">Carregando…</td></tr></tbody>
+                    </table>
+                </div>
                 <div class="panel-pad"></div>
             </div>
         </div>
@@ -231,7 +353,7 @@
     <div class="rail">
         <button id="btn-toggle" class="rail-btn" title="Abrir/fechar painel"><i class="bi bi-chevron-left"></i></button>
         <button id="btn-oaes" class="rail-btn primary" title="OAEs"><i class="bi bi-building"></i></button>
-        <button id="btn-bell" class="rail-btn" title="Alertas por OAE"><i class="bi bi-bell-fill"></i></button>
+        <button id="btn-bell" class="rail-btn" title="Gerenciar Alertas de OAEs"><i class="bi bi-bell-fill"></i></button>
         <button id="btn-indicadores" class="rail-btn" title="Gerenciar Indicadores"><i class="bi bi-sliders"></i></button>
     </div>
 </div>
@@ -262,6 +384,140 @@
         </div></div>
 </div>
 
+<!-- === Modal: Tipo (novo/editar) === -->
+<div class="modal fade" id="modalTipo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog"><div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tipo de OAE</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="tipo-id">
+                <div class="mb-2">
+                    <label class="form-label">Nome</label>
+                    <input id="tipo-nome" class="form-control">
+                </div>
+                <div>
+                    <label class="form-label">Descrição</label>
+                    <textarea id="tipo-desc" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button id="btn-save-tipo" class="btn btn-primary">Salvar</button>
+            </div>
+        </div></div>
+</div>
+
+<!-- === Offcanvas: Indicadores por Tipo === -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="ocIndicadores">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title">Indicadores do Tipo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div id="oc-indicadores-body">Carregando…</div>
+        <div class="mt-3 text-end">
+            <button class="btn btn-secondary" data-bs-dismiss="offcanvas">Fechar</button>
+            <button id="btn-oc-ind-save" class="btn btn-primary">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- === Modal: Regra (novo/editar) === -->
+<div class="modal fade" id="modalRegra" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Regra de Alerta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="rule-id">
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#escopo-tipo" type="button">Por Tipo</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#escopo-oae" type="button">Por OAE</button></li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="escopo-tipo">
+                        <div class="mb-2">
+                            <label class="form-label">Tipo</label>
+                            <select id="rule-tipoId" class="form-select"></select>
+                            <div class="form-text">Indicadores listados abaixo respeitam os vinculados ao Tipo.</div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="escopo-oae">
+                        <div class="mb-2">
+                            <label class="form-label">OAEs</label>
+                            <input id="rule-oae-input" class="form-control" placeholder="Digite o nome da OAE e pressione Enter">
+                            <div id="rule-oae-chips" class="mt-2 d-flex flex-wrap gap-1"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-2">
+                    <div class="col-md-5">
+                        <label class="form-label">Indicador</label>
+                        <select id="rule-indicador" class="form-select"></select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Condição</label>
+                        <select id="rule-cond" class="form-select">
+                            <option value="<">&lt; menor que</option>
+                            <option value=">">&gt; maior que</option>
+                            <option value="=">= igual a</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Threshold</label>
+                        <div class="input-group">
+                            <input id="rule-threshold" type="number" step="any" class="form-control">
+                            <span class="input-group-text" id="rule-unit">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-2 mt-2">
+                    <div class="col-md-6">
+                        <label class="form-label">Destinatários (placeholder)</label>
+                        <input id="rule-dest" class="form-control" placeholder="Ex.: Equipe de Operação">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Canais</label>
+                        <div class="d-flex gap-3 align-items-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="rule-ch-tela" checked>
+                                <label class="form-check-label" for="rule-ch-tela">Alerta em Tela</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="rule-ch-email">
+                                <label class="form-check-label" for="rule-ch-email">E-mail</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="rule-ch-sms">
+                                <label class="form-check-label" for="rule-ch-sms">SMS</label>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-2">
+                    <label class="form-label">Janela de silêncio (anti-spam)</label>
+                    <select id="rule-silence" class="form-select">
+                        <option value="5">5 min</option>
+                        <option value="15">15 min</option>
+                        <option value="30" selected>30 min</option>
+                        <option value="60">60 min</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button id="btn-save-rule" class="btn btn-primary">Salvar</button>
+            </div>
+        </div></div>
+</div>
+
 <script>
     /* ===== Estado global ===== */
     var map, info, activeTab = 'oae';
@@ -269,14 +525,11 @@
     var alertMarkers = [], markersByCat = { ACCIDENT:[], HAZARD:[], JAM:[], ROAD_CLOSED:[] };
     var layersEnabled = { oaes:true, alerts:true };
     var typeState = {};
-    var selectedOAEIds = [];              // painel OAEs
-    var monSelectedOAEIds = [];           // painel Alertas/monitoramento
+    var selectedOAEIds = [];
+    var monSelectedOAEIds = [];
     var allOaeNames = [];
     var oaeAreaRectsById = {};
     var polyIdSeq = 1;
-
-    var monCats = { ACCIDENT:true, HAZARD:true, JAM:true, ROAD_CLOSED:true };
-    var monTimer = null, monSeen = {}; // dedupe
 
     var CAT_STYLE = {
         ACCIDENT:{ fill:'#ffa726', glyph:'🚗' },
@@ -308,17 +561,17 @@
         if (tab === 'ind') {
             title.textContent = 'Gerenciar Tipos & Indicadores';
             pInd.classList.remove('d-none');
+            renderTypesTable();
         } else if (tab === 'alerts') {
-            title.textContent = 'Alertas por OAE (monitoramento)';
+            title.textContent = 'Gerenciar Alertas de OAEs';
             pBell.classList.remove('d-none');
+            renderRulesTable();
         } else {
             title.textContent = 'Obras de Arte Especiais (OAEs)';
             pOae.classList.remove('d-none');
         }
         actions.innerHTML = '<button id="btn-clear-filter" class="btn btn-outline-secondary btn-sm">Limpar Filtro</button>';
-        document.getElementById('btn-clear-filter').onclick = function(){
-            if (activeTab==='alerts') clearMonOaEs(); else clearOaeFilter();
-        };
+        document.getElementById('btn-clear-filter').onclick = function(){ clearOaeFilter(); };
         openPanel();
     }
 
@@ -353,38 +606,34 @@
         document.getElementById('btn-all').onclick  = function(){ setAllTypes(true); };
         document.getElementById('btn-none').onclick = function(){ setAllTypes(false); };
 
-        // OAEs (chips)
+        // chips OAEs
         var input = document.getElementById('oae-input');
         input.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); tryAddOAE(input.value); }});
         input.addEventListener('change', function(){ tryAddOAE(input.value); });
         input.addEventListener('focus', openPanel);
 
-        // Monitor (chips)
-        var minput = document.getElementById('mon-oae-input');
-        minput.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); tryAddMonOAE(minput.value); }});
-        minput.addEventListener('change', function(){ tryAddMonOAE(minput.value); });
-
-        // Monitor categorias
-        var monCbs=document.querySelectorAll('.mon-cat');
-        for (var i=0;i<monCbs.length;i++){
-            monCbs[i].onchange=function(ev){
-                var cat=ev.target.getAttribute('data-cat'); monCats[cat]=ev.target.checked;
-            };
-        }
-        // Monitor switch
-        document.getElementById('mon-switch').onchange=function(ev){
-            if (ev.target.checked){ startMonitor(); } else { stopMonitor(); }
-        };
-
         fillTrafficSummary();
         updateWazeUpdated();
         fetchOAEs();
 
-        // painel gestão tipos
-        var cont = document.getElementById('indicadores-content');
-        cont.innerHTML = '<div class="alert alert-info mb-2">Use o botão <b>Cadastrar OAE</b> para adicionar rapidamente uma OAE herdando os indicadores do Tipo.</div>';
+        // Tipos & Indicadores (seed + render)
+        ensureSeeds();
+        renderTypesTable();
+
+        // Regras
+        document.getElementById('btn-new-rule').onclick = function(){ openRuleModal(); };
+        document.getElementById('rule-search').oninput = renderRulesTable;
+        document.getElementById('rule-filter-status').onchange = renderRulesTable;
+
+        // Tipos CRUD
+        document.getElementById('btn-new-type').onclick = function(){ openTipoModal(); };
+        document.getElementById('type-search').oninput = renderTypesTable;
+
+        // Cadastrar OAE (exibe herança)
         document.getElementById('btn-new-oae').onclick = openNewOaeModal;
     }
+
+    const CLICK_TOLERANCE_M = 8;
 
     /* ===== OAEs (mapa) ===== */
     function fetchOAEs(){
@@ -394,8 +643,6 @@
             setStatus('OAEs carregadas: '+oaeLayers.length+'. Use o campo acima para selecionar.');
         }).catch(function(e){ console.error(e); setStatus('Falha ao carregar OAEs (veja o console).'); });
     }
-    var CLICK_TOLERANCE_M = 8;
-
     function setSelectedStyle(pl, isSelected){
         if (!pl) return;
         if (isSelected){
@@ -412,7 +659,6 @@
             pl.setOptions({ zIndex:null });
         }
     }
-
     function renderOAEs(fc){
         if(!fc || !fc.features || !fc.features.length) return;
 
@@ -445,20 +691,16 @@
 
             pl.addListener('click', function(ev){
                 if (!google.maps.geometry.poly.isLocationOnEdge(ev.latLng, pl, CLICK_TOLERANCE_M)) return;
-                if (activeTab==='alerts'){ addMonOAEByPolyline(pl, true); }
-                else { addOAEByPolyline(pl, true); }
+                addOAEByPolyline(pl, true);
                 showOAEInfo(pl, ev.latLng);
                 openPanel();
             });
         });
 
         fillOaeSuggestions();
-        fillMonOaeSuggestions();
     }
-
     function getPolylinesByName(name){ return oaeLayers.filter(pl => pl.__oaeName === name); }
     function getPolylineById(id){ for (var i=0;i<oaeLayers.length;i++) if (oaeLayers[i].__id===id) return oaeLayers[i]; return null; }
-
     function showOAEInfo(pl, anchor){
         var lenM = google.maps.geometry.spherical.computeLength(pl.getPath());
         var km = (lenM/1000).toFixed(2)+' km';
@@ -527,7 +769,6 @@
         if (pl) addOAEByPolyline(pl, true);
         document.getElementById('oae-input').value=''; setPanel('oae');
     }
-
     function drawAreaForPolyline(pl, meters){
         meters = meters || 500;
         var path = pl.getPath(); if(!path || path.getLength()===0) return;
@@ -555,7 +796,6 @@
         }
         setSelectedStyle(pl, true); drawAreaForPolyline(pl, 500);
         if (zoom) fitToSelectedOAEs({ maxZoom: 15 });
-        fetchAlertsForSelected();
         setStatus('OAEs selecionadas: ' + selectedOAEIds.length);
     }
     function removeOAEById(id){
@@ -563,7 +803,7 @@
         renderChips();
         if (oaeAreaRectsById[id]) { oaeAreaRectsById[id].setMap(null); delete oaeAreaRectsById[id]; }
         var pl = getPolylineById(id); if (pl) setSelectedStyle(pl, false);
-        fitToSelectedOAEs({ maxZoom: 15 }); fetchAlertsForSelected();
+        fitToSelectedOAEs({ maxZoom: 15 });
         setStatus('OAEs selecionadas: ' + selectedOAEIds.length);
     }
     function renderChips(){
@@ -598,138 +838,16 @@
     function clearOaeFilter(){
         selectedOAEIds.slice().forEach(removeOAEById);
         selectedOAEIds = []; renderChips();
-        clearAlerts(); setStatus('Filtro limpo. Selecione OAEs para ver alertas.');
-    }
-
-    /* ===== ALERTAS (render no mapa) ===== */
-    function fetchAlertsForSelected(){
-        clearAlerts();
-        if(!selectedOAEIds.length){ updateSummaryCounts(); return Promise.resolve(0); }
-        var namesSet = {};
-        selectedOAEIds.forEach(function(id){ var pl = getPolylineById(id); if (pl) namesSet[pl.__oaeName]=true; });
-        var names = Object.keys(namesSet);
-        var reqs = names.map(function(n){
-            return fetch('api/alerts.php?mock=1&oae_name='+encodeURIComponent(n))
-                .then(r=>r.json()).catch(()=>({type:'FeatureCollection',features:[]}));
-        });
-        return Promise.all(reqs).then(function(arr){
-            var all={type:'FeatureCollection',features:[]};
-            arr.forEach(function(data){ var fc=normalizeAlertsToFC(data,null); all.features = all.features.concat(fc.features||[]); });
-            var count=renderAlerts(all);
-            setStatus('OAEs selecionadas: '+selectedOAEIds.length+' • Alertas: '+count);
-            updateWazeUpdated(); return count;
-        });
-    }
-    function normalizeAlertsToFC(data, nameFilter){
-        var features=[];
-        if(data && data.type && /featurecollection/i.test(data.type) && data.features && data.features.length){
-            features = data.features.filter(function(f){
-                if(!f.properties) return false;
-                if(!nameFilter) return (f.geometry && f.geometry.type==='Point');
-                var n = f.properties.oae_name || f.properties.name || '';
-                return (f.geometry && f.geometry.type==='Point') && (n && n.toLowerCase().trim()===nameFilter.toLowerCase().trim());
-            }); return { type:'FeatureCollection', features:features };
-        }
-        if(data && data.alerts && data.alerts.length){
-            data.alerts.forEach(function(a){
-                if(!a.point || !a.point.geometry || a.point.geometry.type!=='Point') return;
-                var n = a.name || (a.point.properties && a.point.properties.name) || '';
-                if(nameFilter && n.toLowerCase().trim()!==nameFilter.toLowerCase().trim()) return;
-                features.push({ type:'Feature', properties:{
-                        name:n, type:a.type||null, alert_type:a.alert_type||null, street:a.street||null, date:a.date||null, hour:a.hour||null
-                    }, geometry:a.point.geometry });
-            }); return { type:'FeatureCollection', features:features };
-        }
-        if(data && data.jams && data.jams.length){
-            data.jams.forEach(function(a){
-                if(!a.point || !a.point.geometry || a.point.geometry.type!=='Point') return;
-                var n = a.name || (a.point.properties && a.point.properties.name) || '';
-                if(nameFilter && n.toLowerCase().trim()!==nameFilter.toLowerCase().trim()) return;
-                features.push({ type:'Feature', properties:{
-                        name:n, type:a.type||null, alert_type:a.alert_type||'JAM', street:a.street||null, date:a.date||null, hour:a.hour||null
-                    }, geometry:a.point.geometry });
-            }); return { type:'FeatureCollection', features:features };
-        }
-        return { type:'FeatureCollection', features:[] };
-    }
-    function resetMarkersByCat(){ for(var k in markersByCat){ if(!markersByCat.hasOwnProperty(k)) continue; markersByCat[k].forEach(function(m){ m.setMap(null); }); markersByCat[k]=[]; } }
-    function catKeyFrom(type){
-        if(!type) return 'JAM';
-        var t=String(type).toUpperCase();
-        if(t.indexOf('ACCIDENT')>=0) return 'ACCIDENT';
-        if(t.indexOf('ROAD_CLOSED')>=0 || t.indexOf('ROAD_CLOSURE')>=0) return 'ROAD_CLOSED';
-        if(t.indexOf('HAZARD')>=0) return 'HAZARD';
-        if(t.indexOf('JAM')>=0) return 'JAM';
-        return 'JAM';
-    }
-    function makeGlyphIcon(fill,glyph){
-        var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24'>"
-            + "<circle cx='12' cy='12' r='9' fill='"+fill+"' stroke='#333' stroke-width='1'/>"
-            + "<text x='12' y='15' text-anchor='middle' font-size='12' fill='#111' font-family='Segoe UI Emoji, Apple Color Emoji, Noto Color Emoji, Arial, sans-serif'>"+glyph+"</text>"
-            + "</svg>";
-        return { url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg),
-            scaledSize:new google.maps.Size(22,22), anchor:new google.maps.Point(11,11) };
-    }
-    function renderAlerts(fc){
-        if(!fc || !fc.features) return 0;
-        resetMarkersByCat();
-        fc.features.forEach(function(f){
-            if(!f.geometry || f.geometry.type!=='Point') return;
-            var lng=f.geometry.coordinates[0], lat=f.geometry.coordinates[1];
-            var p=f.properties||{};
-            var cat=catKeyFrom(p.alert_type || p.type);
-            var sty=CAT_STYLE[cat] || {fill:'#ffb300', glyph:'•'};
-            var icon=makeGlyphIcon(sty.fill, sty.glyph);
-            var m=new google.maps.Marker({ position:{lat:lat,lng:lng}, icon:icon, zIndex:100, map: layersEnabled.alerts ? map : null });
-            m.addListener('click', function(){
-                var title=(p.alert_type || p.type || 'Alerta').replace(/_/g,' ');
-                var when=[p.date,p.hour].filter(Boolean).join(' ');
-                var street=p.street||'';
-                info.setContent('<div><b>'+title+'</b>'+(street?'<br>'+street:'')+(when?'<br><small>'+when+'</small>':'')+'</div>');
-                info.open(map,m);
-            });
-            alertMarkers.push(m);
-            markersByCat[cat].push(m);
-        });
-        updateSummaryCounts(); bindSummaryToggles(); updateAlertsVisibility();
-        return alertMarkers.length;
-    }
-    function bindSummaryToggles(){
-        var sws=document.querySelectorAll('#alerts-summary .cat-toggle');
-        for(var i=0;i<sws.length;i++){
-            sws[i].onchange=function(ev){
-                var card=ev.currentTarget.closest('[data-cat]'); var cat=card.getAttribute('data-cat');
-                var on=ev.currentTarget.checked && layersEnabled.alerts;
-                (markersByCat[cat]||[]).forEach(function(m){ m.setMap(on?map:null); });
-            };
-        }
-    }
-    function updateSummaryCounts(){
-        var box=document.getElementById('alerts-summary');
-        var empty=true; for(var k in markersByCat){ if(markersByCat.hasOwnProperty(k) && markersByCat[k].length){ empty=false; break; } }
-        box.classList.toggle('d-none', empty);
-        var cards=box.querySelectorAll('[data-cat]');
-        for(var i=0;i<cards.length;i++){
-            var cat=cards[i].getAttribute('data-cat'); var n=(markersByCat[cat]||[]).length;
-            cards[i].querySelector('.count-num').textContent=n;
-        }
-    }
-    function updateAlertsVisibility(){
-        var box=document.getElementById('alerts-summary');
-        function on(cat){ var sw=box.querySelector('[data-cat="'+cat+'"] .cat-toggle'); return layersEnabled.alerts && sw && sw.checked; }
-        for(var cat in markersByCat){ if(!markersByCat.hasOwnProperty(cat)) continue;
-            (markersByCat[cat]||[]).forEach(function(m){ m.setMap(on(cat)?map:null); });
-        }
+        setStatus('Filtro limpo. Selecione OAEs para ver alertas.');
     }
 
     /* ===== Util ===== */
-    function clearAlerts(){ alertMarkers.forEach(function(m){ m.setMap(null); }); alertMarkers.length=0; resetMarkersByCat(); updateSummaryCounts(); }
     function clearAll(){
         oaeLayers.forEach(function(l){ l.setMap(null); }); oaeLayers.length=0;
         for(var k in typePolylines){ if(typePolylines.hasOwnProperty(k)) delete typePolylines[k]; }
         for (var id in oaeAreaRectsById){ if (oaeAreaRectsById[id]) oaeAreaRectsById[id].setMap(null); }
         oaeAreaRectsById = {};
-        clearOaeFilter(); clearMonOaEs(); stopMonitor();
+        clearOaeFilter();
         setStatus('Camadas limpas. Recarregue para buscar novamente.');
     }
     function updateWazeUpdated(){
@@ -753,171 +871,14 @@
             ul.appendChild(li);
         });
     }
-
-    /* ===== Monitoramento (painel Alertas) ===== */
-    function fillMonOaeSuggestions(){
-        var dl=document.getElementById('mon-oaes-list'); if(!dl) return; dl.innerHTML='';
-        allOaeNames.forEach(function(n){ var o=document.createElement('option'); o.value=n; dl.appendChild(o); });
-    }
-    function tryAddMonOAE(value){
-        var name=(value||'').trim(); if(!name) return;
-        var found = allOaeNames.find(n=>n.toLowerCase()===name.toLowerCase()) || name;
-        var pl = getPolylinesByName(found)[0];
-        if (pl) addMonOAEByPolyline(pl, true);
-        document.getElementById('mon-oae-input').value='';
-    }
-    function addMonOAEByPolyline(pl, zoom){
-        if (monSelectedOAEIds.indexOf(pl.__id)!==-1) return;
-        monSelectedOAEIds.push(pl.__id);
-        renderMonChips();
-        if (zoom){
-            var b=new google.maps.LatLngBounds(); var p=pl.getPath();
-            for (var i=0;i<p.getLength();i++) b.extend(p.getAt(i));
-            map.fitBounds(b);
-        }
-    }
-    function removeMonOAEById(id){
-        monSelectedOAEIds = monSelectedOAEIds.filter(x=>x!==id);
-        renderMonChips();
-    }
-    function renderMonChips(){
-        var box=document.getElementById('mon-oae-chips'); box.innerHTML='';
-        monSelectedOAEIds.forEach(function(id){
-            var pl = getPolylineById(id); if(!pl) return;
-            var chip=document.createElement('span'); chip.className='chip';
-            chip.innerHTML='<span>'+pl.__oaeName+'</span><span class="x" title="Remover">&times;</span>';
-            chip.querySelector('.x').onclick=function(){ removeMonOAEById(id); };
-            box.appendChild(chip);
-        });
-    }
-    function clearMonOaEs(){
-        monSelectedOAEIds = [];
-        renderMonChips();
-        var feed = document.getElementById('mon-feed');
-        if (feed) feed.innerHTML = '';
-        monSeen = {};
-    }
-
-    function startMonitor(){
-        if (monTimer) return;
-        monPoll(); monTimer = setInterval(monPoll, 20000);
-    }
-    function stopMonitor(){ if (monTimer){ clearInterval(monTimer); monTimer=null; } }
-    function monPoll(){
-        if (!monSelectedOAEIds.length) return;
-        var namesSet={}; monSelectedOAEIds.forEach(function(id){ var pl=getPolylineById(id); if(pl) namesSet[pl.__oaeName]=true; });
-        var names=Object.keys(namesSet); if(!names.length) return;
-
-        var reqs = names.map(function(n){
-            return fetch('api/alerts.php?mock=1&oae_name='+encodeURIComponent(n))
-                .then(r=>r.json()).catch(()=>({type:'FeatureCollection',features:[]}));
-        });
-        Promise.all(reqs).then(function(arr){
-            var all=[]; arr.forEach(function(data){
-                var fc=normalizeAlertsToFC(data,null); (fc.features||[]).forEach(function(f){ all.push(f); });
-            });
-            // filtra categorias
-            all = all.filter(function(f){
-                var cat=catKeyFrom((f.properties||{}).alert_type || (f.properties||{}).type);
-                return !!monCats[cat];
-            });
-            // ordena por data/hora (se houver)
-            // dedup e render
-            renderMonitorFeed(all);
-        });
-    }
-    function featureKey(f){
-        var p=f.properties||{}, g=f.geometry||{};
-        var cat=catKeyFrom(p.alert_type||p.type);
-        var xy=(g.coordinates||[]).join(',');
-        var dt=[p.date,p.hour].filter(Boolean).join(' ');
-        return cat+'|'+xy+'|'+dt+'|'+(p.street||'');
-    }
-    function renderMonitorFeed(features){
-        var feed=document.getElementById('mon-feed'); if(!feed) return;
-        var added=0;
-        for (var i=0;i<features.length;i++){
-            var f=features[i]; var key=featureKey(f);
-            if (monSeen[key]) continue;
-            monSeen[key]=1; added++;
-            var p=f.properties||{}, cat=catKeyFrom(p.alert_type||p.type);
-            var title=(p.alert_type||p.type||'Alerta').replace(/_/g,' ');
-            var when=[p.date,p.hour].filter(Boolean).join(' ');
-            var street=p.street||'';
-            var div=document.createElement('div'); div.className='item';
-            div.innerHTML='<div class="t">'+title+' <span class="badge bg-light text-dark">'+cat+'</span></div>'
-                + (street?'<div>'+street+'</div>':'')
-                + (when?'<div class="d">'+when+'</div>':'');
-            feed.prepend(div);
-        }
-        // limita feed
-        while (feed.children.length>100) feed.removeChild(feed.lastChild);
-        if (!feed.children.length) feed.innerHTML='<div class="text-muted p-2">Sem novos alertas.</div>';
-    }
-
-    /* ===== Modal Cadastro de OAE ===== */
-    function openNewOaeModal(){
-        fetch('api/oae_types.php').then(r=>r.json()).then(function(list){
-            var sel = document.getElementById('oae-type'); sel.innerHTML='';
-            list.forEach(function(t){ var opt=document.createElement('option'); opt.value=t.id; opt.textContent=t.name; sel.appendChild(opt); });
-            updatePresetPreview(sel.value);
-            sel.onchange = function(){ updatePresetPreview(sel.value); };
-
-            var modal = new bootstrap.Modal(document.getElementById('modalNewOAE'));
-            modal.show();
-
-            document.getElementById('btn-save-oae').onclick = function(){
-                var name = document.getElementById('oae-name').value.trim();
-                var typeId = sel.value;
-                if (!name){ alert('Informe o nome.'); return; }
-                fetch('api/oaes.php', {
-                    method:'POST', headers:{'Content-Type':'application/json'},
-                    body: JSON.stringify({ name:name, typeId:typeId })
-                }).then(function(r){
-                    return r.text().then(function(txt){
-                        var ok = r.ok, data=null; try{ data=JSON.parse(txt); }catch(e){}
-                        if(!ok) throw new Error('HTTP '+r.status+' – '+(txt||''));
-                        if(!data || !data.ok) throw new Error('Resposta inválida: '+txt);
-                        return data;
-                    });
-                }).then(function(){ modal.hide(); alert('OAE cadastrada!'); })
-                    .catch(function(err){ console.error(err); alert('Erro de rede/servidor ao salvar OAE.\n'+String(err.message||err)); });
-            };
-        }).catch(function(){ alert('Não foi possível carregar os tipos. Verifique api/oae_types.php.'); });
-    }
-    function updatePresetPreview(typeId){
-        if (!typeId){ document.getElementById('oae-preset-list').innerHTML=''; return; }
-        Promise.all([
-            fetch('api/oae_type_indicadores.php?oaeTypeId='+encodeURIComponent(typeId)).then(r=>r.json()),
-            fetch('api/indicators.php').then(r=>r.json())
-        ]).then(function(arr){
-            var links=arr[0]||[], indicators=arr[1]||[];
-            var nameById={}; indicators.forEach(function(i){ nameById[i.id]=i.name; });
-            var html='<div class="fw-semibold mb-1">Indicadores que serão herdados:</div><ul class="mb-0">';
-            if (!links.length) html+='<li>(Nenhum definido para este tipo)</li>';
-            links.sort(function(a,b){ var wa=(a.weight!=null)?a.weight:999, wb=(b.weight!=null)?b.weight:999; return wa-wb; });
-            links.forEach(function(l){ var nm = nameById[l.indicatorId] || l.indicatorId; html+='<li>'+nm+(l.weight!=null?' <span class="text-muted">(peso '+l.weight+')</span>':'')+'</li>'; });
-            html+='</ul>';
-            document.getElementById('oae-preset-list').innerHTML = html;
-        }).catch(function(){
-            document.getElementById('oae-preset-list').innerHTML = '<div class="text-danger">Falha ao carregar os indicadores do tipo.</div>';
-        });
-    }
-
-    window.addEventListener('load', initMap);
-
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    /* ========= Utilitário de Toast (Bootstrap 5) ========= */
+    /* ========= Toast ========= */
     function showToast({title='Sucesso', message='Operação concluída.', variant='success', autohide=true, delay=2400} = {}){
         const ctr = document.getElementById('toast-ctr'); if(!ctr) return;
-        const bg = {
-            success:'bg-success text-white', danger:'bg-danger text-white', warning:'bg-warning',
-            info:'bg-info', primary:'bg-primary text-white', secondary:'bg-secondary text-white'
-        }[variant] || 'bg-dark text-white';
-
+        const bg = { success:'bg-success text-white', danger:'bg-danger text-white', warning:'bg-warning', info:'bg-info', primary:'bg-primary text-white', secondary:'bg-secondary text-white' }[variant] || 'bg-dark text-white';
         const el = document.createElement('div');
         el.className = `toast align-items-center border-0 shadow`;
         el.setAttribute('role','alert'); el.setAttribute('aria-live','assertive'); el.setAttribute('aria-atomic','true');
@@ -927,15 +888,11 @@
       <small>agora</small>
       <button type="button" class="btn-close btn-close-white ms-2 mb-1" data-bs-dismiss="toast" aria-label="Close"></button>
     </div>
-    <div class="toast-body">${message}</div>
-  `;
+    <div class="toast-body">${message}</div>`;
         ctr.appendChild(el);
-        const t = new bootstrap.Toast(el, { autohide, delay });
-        t.show();
+        const t = new bootstrap.Toast(el, { autohide, delay }); t.show();
         el.addEventListener('hidden.bs.toast', () => el.remove());
     }
-
-    /* Helpers globais para você chamar quando quiser */
     window.notifyAlertSent = function(oaeName, tipo){
         showToast({ title:'Alerta enviado', message:`${tipo||'Alerta'} para ${oaeName||'OAE'} enviado com sucesso.`, variant:'primary' });
     };
@@ -943,330 +900,645 @@
         showToast({ title:'Novo alerta', message:`${tipo||'Alerta'} detectado em ${oaeName||'OAE'}.`, variant:'warning' });
     };
 </script>
+
 <script>
-    /* Botão "Monitorar alerta" como toggle + toasts (compatível com seu código) */
-    (function(){
-        var el = document.getElementById('mon-switch');
-        if (!el) return;
+    /* ======= Seeds + LocalStorage helpers ======= */
+    const LS_TIPOS='siim_tipos', LS_INDICADORES='siim_indicadores', LS_TIPO_IND='siim_tipo_ind', LS_REGRAS='siim_regras';
 
-        // Se for input checkbox, deixamos seu handler original funcionar.
-        if (el.tagName === 'INPUT') return;
+    function lsGet(k, d){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(_){ return d; } }
+    function lsSet(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
 
-        // Se for BUTTON com data-active="0|1"
-        el.addEventListener('click', function(){
-            var active = el.dataset.active === '1';
-            if (!active){
-                el.dataset.active = '1';
-                el.classList.remove('btn-primary'); el.classList.add('btn-danger');
-                el.innerHTML = '<i class="bi bi-stop-circle"></i> Parar monitoramento';
-                if (typeof startMonitor === 'function') startMonitor();
-                showToast({ title:'Monitoramento', message:'Preferências salvas. Monitoramento iniciado.', variant:'success' });
-            } else {
-                el.dataset.active = '0';
-                el.classList.remove('btn-danger'); el.classList.add('btn-primary');
-                el.innerHTML = '<i class="bi bi-play-circle"></i> Monitorar alerta';
-                if (typeof stopMonitor === 'function') stopMonitor();
-                showToast({ title:'Monitoramento', message:'Monitoramento encerrado.', variant:'secondary' });
-            }
-        });
-    })();
+    function ensureSeeds(){
+        if(!lsGet(LS_INDICADORES)){ lsSet(LS_INDICADORES, [
+            {id:'velocidade', nome:'Velocidade Média', categoria:'Fluxo', unidade:'km/h'},
+            {id:'tempo_travessia', nome:'Tempo Médio de Travessia', categoria:'Fluxo', unidade:'min'},
+            {id:'contagem_lentidao', nome:'Contagem de Eventos de Lentidão', categoria:'Fluxo', unidade:'eventos'},
+            {id:'duracao_lentidao', nome:'Duração Média da Lentidão', categoria:'Fluxo', unidade:'min'},
+            {id:'indice_congestionamento', nome:'Índice de Congestionamento', categoria:'Fluxo', unidade:'%'},
+            {id:'acidentes', nome:'Contagem de Acidentes', categoria:'Incidentes', unidade:'eventos'},
+            {id:'parados', nome:'Veículos Parados (via/acost.)', categoria:'Incidentes', unidade:'eventos'},
+            {id:'buracos', nome:'Buracos na Via', categoria:'Incidentes', unidade:'eventos'},
+            {id:'alagamentos', nome:'Alagamentos', categoria:'Incidentes', unidade:'eventos'},
+            {id:'perigos', nome:'Outros Perigos', categoria:'Incidentes', unidade:'eventos'},
+            {id:'qtd_cameras', nome:'Quantidade de Câmeras', categoria:'Ativos', unidade:'unid'},
+            {id:'status_cameras', nome:'Status das Câmeras', categoria:'Ativos', unidade:'%'}
+        ]); }
+        if(!lsGet(LS_TIPOS)){ lsSet(LS_TIPOS, [
+            {id:'ponte', nome:'Ponte', desc:'Estrutura que transpõe cursos d’água.'},
+            {id:'viaduto', nome:'Viaduto', desc:'Estrutura que transpõe vias/vales/áreas urbanas.'},
+            {id:'tunel', nome:'Túnel', desc:'Passagem subterrânea para veículos.'},
+            {id:'passarela', nome:'Passarela', desc:'Travessia elevada exclusiva de pedestres.'},
+            {id:'trincheira', nome:'Trincheira / Passagem Inferior', desc:'Via que passa por baixo de outra.'}
+        ]); }
+        if(!lsGet(LS_TIPO_IND)){ lsSet(LS_TIPO_IND, {
+            ponte:['velocidade','tempo_travessia','contagem_lentidao','duracao_lentidao','indice_congestionamento','qtd_cameras','status_cameras'],
+            viaduto:['contagem_lentidao','indice_congestionamento','qtd_cameras','status_cameras'],
+            tunel:['velocidade','contagem_lentidao','alagamentos','qtd_cameras','status_cameras'],
+            passarela:['qtd_cameras','status_cameras'],
+            trincheira:['velocidade','contagem_lentidao','alagamentos','qtd_cameras','status_cameras']
+        }); }
+        if(!lsGet(LS_REGRAS)){ lsSet(LS_REGRAS, []); }
+    }
+    function indicadores(){ return lsGet(LS_INDICADORES,[]); }
+    function tipos(){ return lsGet(LS_TIPOS,[]); }
+    function tipoIndMap(){ return lsGet(LS_TIPO_IND,{}); }
+    function setTipoIndMap(m){ lsSet(LS_TIPO_IND,m); }
+    function regras(){ return lsGet(LS_REGRAS,[]); }
+    function setRegras(r){ lsSet(LS_REGRAS,r); }
 </script>
+
 <script>
-    /* ===== Pedidos de alerta (UI local) ===== */
-    (function(){
-        var btn      = document.getElementById('mon-switch');     // botão Monitorar alerta (já existe)
-        var sel      = document.getElementById('mon-category');   // select de tipo
-        var listEl   = document.getElementById('mon-reqs');       // lista de pedidos
-        var clearAll = document.getElementById('mon-clear-all');
+    /* ======= Tipos & Indicadores (PoC 1) ======= */
+    function renderTypesTable(){
+        const body = document.getElementById('types-body'); if(!body) return;
+        const q = (document.getElementById('type-search')?.value || '').toLowerCase();
+        const list = tipos().filter(t => !q || t.nome.toLowerCase().includes(q));
 
-        // estado local dos pedidos: { id, oaeId, oaeName, type, active, createdAt }
-        var monRequests = [];
+        if(!list.length){ body.innerHTML='<tr><td colspan="5" class="text-muted">Nenhum tipo.</td></tr>'; return; }
 
-        // mapeia código -> rótulo
-        var TYPE_LABEL = {
-            ACCIDENT:'Acidente',
-            JAM:'Congestionamento',
-            ROAD_CLOSED:'Via interditada',
-            HAZARD:'Perigo',
-            SEMAFORO_OFF:'Semáforo desligado'
+        const map = tipoIndMap(); const indsById = Object.fromEntries(indicadores().map(i=>[i.id,i]));
+        body.innerHTML='';
+        list.forEach((t,idx)=>{
+            const inds = (map[t.id]||[]).map(id=>indsById[id]?.nome||id);
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+      <td>${idx+1}</td>
+      <td>${t.nome}</td>
+      <td class="text-muted small">${t.desc||''}</td>
+      <td><span class="badge text-bg-secondary">${(map[t.id]||[]).length}</span></td>
+      <td class="text-end">
+        <button class="btn btn-sm btn-outline-primary me-1" data-act="ind" data-id="${t.id}"><i class="bi bi-sliders"></i> Indicadores</button>
+        <button class="btn btn-sm btn-outline-secondary me-1" data-act="edit" data-id="${t.id}"><i class="bi bi-pencil"></i></button>
+        <button class="btn btn-sm btn-outline-danger" data-act="del" data-id="${t.id}"><i class="bi bi-trash"></i></button>
+      </td>`;
+            body.appendChild(tr);
+        });
+        body.onclick = function(ev){
+            const btn = ev.target.closest('button[data-act]'); if(!btn) return;
+            const id = btn.getAttribute('data-id'), act = btn.getAttribute('data-act');
+            if(act==='edit') openTipoModal(id);
+            if(act==='del') { const arr=tipos().filter(t=>t.id!==id); lsSet(LS_TIPOS, arr); renderTypesTable(); showToast({title:'Excluído',variant:'secondary',message:'Tipo removido.'}); }
+            if(act==='ind') openIndicadoresCanvas(id);
+        }
+    }
+    function openTipoModal(id){
+        const modal = new bootstrap.Modal(document.getElementById('modalTipo'));
+        const t = tipos().find(x=>x.id===id) || {id:'',nome:'',desc:''};
+        document.getElementById('tipo-id').value = t.id;
+        document.getElementById('tipo-nome').value = t.nome || '';
+        document.getElementById('tipo-desc').value = t.desc || '';
+        document.getElementById('btn-save-tipo').onclick = function(){
+            const idOld = document.getElementById('tipo-id').value;
+            const nome = document.getElementById('tipo-nome').value.trim();
+            const desc = document.getElementById('tipo-desc').value.trim();
+            if(!nome){ alert('Informe o nome do tipo.'); return; }
+            let arr = tipos();
+            if(idOld){
+                arr = arr.map(x=> x.id===idOld ? {...x, nome, desc} : x);
+            }else{
+                const newId = nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-');
+                arr.push({id:newId, nome, desc});
+            }
+            lsSet(LS_TIPOS, arr); modal.hide(); renderTypesTable(); showToast({title:'Salvo',variant:'success',message:'Tipo salvo.'});
+        };
+        modal.show();
+    }
+    function openIndicadoresCanvas(tipoId){
+        const off = new bootstrap.Offcanvas(document.getElementById('ocIndicadores'));
+        const body = document.getElementById('oc-indicadores-body');
+        const catGroups = { Fluxo:[], Incidentes:[], Ativos:[] };
+        indicadores().forEach(i => { (catGroups[i.categoria]||(catGroups[i.categoria]=[])).push(i); });
+        const map = tipoIndMap(); const selected = new Set(map[tipoId]||[]);
+        let html='';
+        Object.keys(catGroups).forEach(cat=>{
+            html += `<div class="mb-2"><div class="fw-semibold mb-1">${cat}</div>`;
+            catGroups[cat].forEach(i=>{
+                const id = `ind-${i.id}`;
+                html += `
+        <div class="form-check">
+          <input class="form-check-input ind-cb" type="checkbox" id="${id}" data-id="${i.id}" ${selected.has(i.id)?'checked':''}>
+          <label class="form-check-label" for="${id}">${i.nome} <span class="text-muted">(${i.unidade})</span></label>
+        </div>`;
+            });
+            html+='</div>';
+        });
+        body.innerHTML = html;
+        document.getElementById('btn-oc-ind-save').onclick = function(){
+            const sel = Array.from(body.querySelectorAll('.ind-cb:checked')).map(cb=>cb.getAttribute('data-id'));
+            const m = tipoIndMap(); m[tipoId] = sel; setTipoIndMap(m);
+            off.hide(); renderTypesTable(); showToast({title:'Indicadores', message:'Vínculos salvos.', variant:'success'});
+        };
+        off.show();
+    }
+
+    /* ======= Regras (PoC 2) ======= */
+    const UNIT_BY_IND = Object.fromEntries(indicadores().map(i=>[i.id,i.unidade]));
+    function renderRulesTable(){
+        const tbody = document.getElementById('rules-body'); if(!tbody) return;
+
+        // ===== filtros / dados base
+        const q  = (document.getElementById('rule-search')?.value||'').toLowerCase();
+        const st = (document.getElementById('rule-filter-status')?.value||'all');
+        const inds = Object.fromEntries(indicadores().map(i=>[i.id,i]));
+        const tps  = Object.fromEntries(tipos().map(t=>[t.id,t]));
+        let list = regras();
+
+        if (st==='on') list = list.filter(r=>r.ativa);
+        else if (st==='off') list = list.filter(r=>!r.ativa);
+
+        if (q){
+            list = list.filter(r=>{
+                const scope = r.escopo?.tipoId
+                    ? (tps[r.escopo.tipoId]?.nome || r.escopo.tipoId)
+                    : (r.escopo?.oaeNames||[]).join(', ');
+                const indNome = inds[r.indicadorId]?.nome || r.indicadorId;
+                return (scope+' '+indNome).toLowerCase().includes(q);
+            });
+        }
+
+        // ===== vazio
+        if (!list.length){
+            tbody.innerHTML = '<tr><td colspan="10" class="text-muted py-4 text-center">Nenhuma regra cadastrada.</td></tr>';
+            return;
+        }
+
+        // ===== cards dentro do tbody (1 linha, 1 célula ocupando a tabela toda)
+        tbody.innerHTML = '';
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 10;
+        td.innerHTML = '<div class="rules-cards"></div>';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+
+        const grid = td.firstElementChild;
+
+        // helper p/ badge de canal
+        const channelBadge = (on, label) =>
+            `<span class="badge ${on ? 'text-bg-primary' : 'text-bg-secondary'}">${label}</span>`;
+
+        list.forEach((r) => {
+            const scopeTxt = r.escopo?.tipoId
+                ? `Tipo: ${tps[r.escopo.tipoId]?.nome || r.escopo.tipoId}`
+                : `OAEs: ${(r.escopo?.oaeNames||[]).join(', ') || '—'}`;
+
+            const indNome = inds[r.indicadorId]?.nome || r.indicadorId;
+            const unit = (window.UNIT_BY_IND ? (UNIT_BY_IND[r.indicadorId]||'') : (inds[r.indicadorId]?.unidade||'')) || '';
+            const ch = r.canais || {tela:true,email:false,sms:false};
+
+            const opText = r.condicao === '<' ? 'menor que'
+                : r.condicao === '>' ? 'maior que'
+                    : 'igual a';
+
+            const card = document.createElement('div');
+            card.className = 'rule-card';
+
+            card.innerHTML = `
+      <div class="rule-head">
+        <div class="rule-scope" title="${scopeTxt}">${scopeTxt}</div>
+        <div class="form-check form-switch m-0" title="Ativar/Inativar">
+          <input class="form-check-input rule-on" type="checkbox" data-id="${r.id}" ${r.ativa?'checked':''}>
+        </div>
+      </div>
+
+      <div class="rule-ind">
+        <span class="text-muted">Indicador:</span> <span class="fw-semibold">${indNome}</span>
+      </div>
+
+      <div class="rule-condition">
+        <span class="lab">Alerta se</span>
+        <span class="ind text-muted">indicador</span>
+        <span class="op fw-bold">${opText}</span>
+        <span class="thr fw-bold">${r.threshold}</span>
+        ${unit ? `<span class="unit text-muted">${unit}</span>` : ''}
+      </div>
+
+      <div class="rule-metas">
+        <span class="badge text-bg-light border">Silêncio <span class="fw-semibold">${r.janelaSilencioMin||30} min</span></span>
+      </div>
+
+      <div class="rule-channels">
+        ${channelBadge(!!ch.tela,  'Tela')}
+        ${channelBadge(!!ch.email, 'E-mail')}
+        ${channelBadge(!!ch.sms,   'SMS')}
+      </div>
+
+      <div class="rule-actions d-grid gap-2">
+        <button class="btn btn-outline-secondary btn-sm" data-act="edit" data-id="${r.id}">
+          <i class="bi bi-pencil"></i> Editar
+        </button>
+        <button class="btn btn-outline-primary btn-sm" data-act="test" data-id="${r.id}">
+          <i class="bi bi-bell"></i> Testar
+        </button>
+        <button class="btn btn-outline-danger btn-sm" data-act="del" data-id="${r.id}">
+          <i class="bi bi-trash"></i> Excluir
+        </button>
+      </div>
+    `;
+
+            grid.appendChild(card);
+        });
+
+        // ===== delegação de eventos (editar / excluir / testar / toggle)
+        tbody.onclick = function(ev){
+            const btn = ev.target.closest('button[data-act]');
+            if (!btn) return;
+            const id  = btn.getAttribute('data-id');
+            const act = btn.getAttribute('data-act');
+            if (act === 'edit')  return openRuleModal(id);
+            if (act === 'test')  return simulateRule(id);
+            if (act === 'del')  {
+                setRegras(regras().filter(x=>x.id!==id));
+                renderRulesTable();
+                return showToast({title:'Excluído',variant:'secondary',message:'Regra removida.'});
+            }
+        };
+        tbody.onchange = function(ev){
+            if (!ev.target.classList.contains('rule-on')) return;
+            const id = ev.target.getAttribute('data-id');
+            setRegras(regras().map(r=> r.id===id ? {...r, ativa: !!ev.target.checked} : r));
+            showToast({
+                title:'Status',
+                message: ev.target.checked ? 'Regra ativada.' : 'Regra desativada.',
+                variant: ev.target.checked ? 'success' : 'secondary'
+            });
+        };
+    }
+
+
+
+    function openRuleModal(id){
+        ensureSeeds();
+        const modal = new bootstrap.Modal(document.getElementById('modalRegra'));
+        const r = regras().find(x=>x.id===id) || {
+            id:'', escopo:{tipoId:'',oaeIds:[],oaeNames:[]},
+            indicadorId:'velocidade', condicao:'<', threshold:20,
+            destinatarios:['Operação'],
+            canais:{tela:true,email:false,sms:false},
+            janelaSilencioMin:30, ativa:true
         };
 
-        // util: nomes de OAEs selecionadas no painel de monitoramento
-        function getMonOaeIds(){ return (window.monSelectedOAEIds || []).slice(); }
-        function getOaeNameById(id){
-            if (typeof getPolylineById !== 'function') return 'OAE';
-            var pl = getPolylineById(id);
-            return (pl && pl.__oaeName) ? pl.__oaeName : 'OAE';
+        // preencher tipos
+        const selTipo = document.getElementById('rule-tipoId'); selTipo.innerHTML='';
+        tipos().forEach(t=>{ const o=document.createElement('option'); o.value=t.id; o.textContent=t.nome; selTipo.appendChild(o); });
+        selTipo.value = r.escopo.tipoId || tipos()[0]?.id || '';
+
+        // indicadores (filtra pelos do tipo)
+        function refreshIndicadores(){
+            const selInd = document.getElementById('rule-indicador'); selInd.innerHTML='';
+            const allowed = tipoIndMap()[selTipo.value] || [];
+            const list = allowed.length ? indicadores().filter(i=>allowed.includes(i.id)) : indicadores();
+            list.forEach(i=>{ const o=document.createElement('option'); o.value=i.id; o.textContent=`${i.nome} (${i.unidade})`; selInd.appendChild(o); });
+            document.getElementById('rule-unit').textContent =
+                (indicadores().find(i=>i.id=== (r.indicadorId||list[0]?.id)) || list[0] || {unidade:'—'}).unidade || '—';
+            selInd.onchange = function(){
+                const it = indicadores().find(i=>i.id===this.value);
+                document.getElementById('rule-unit').textContent = it?it.unidade:'—';
+            };
+            document.getElementById('rule-indicador').value =
+                (r.indicadorId && list.some(i=>i.id===r.indicadorId)) ? r.indicadorId : list[0]?.id;
         }
+        selTipo.onchange = refreshIndicadores; refreshIndicadores();
 
-        function renderList(){
-            listEl.innerHTML = '';
-            if (!monRequests.length){
-                listEl.innerHTML = '<li class="list-group-item text-muted">Nenhum pedido ainda. Selecione OAEs, escolha um alerta e clique em “Monitorar alerta”.</li>';
-                return;
-            }
-            monRequests.forEach(function(req){
-                var li = document.createElement('li');
-                li.className = 'list-group-item';
-                li.dataset.reqId = req.id;
+        // valores
+        document.getElementById('rule-id').value = r.id;
+        document.getElementById('rule-cond').value = r.condicao;
+        document.getElementById('rule-threshold').value = r.threshold;
+        document.getElementById('rule-dest').value = (r.destinatarios||[]).join(', ');
+        document.getElementById('rule-silence').value = r.janelaSilencioMin||30;
 
-                var badgeCls = req.active ? 'text-bg-success' : 'text-bg-secondary';
-                var statusTxt = req.active ? 'Ativo' : 'Inativo';
+        // canais (agora todos habilitados visualmente)
+        document.getElementById('rule-ch-tela').checked  = !!(r.canais?.tela);
+        document.getElementById('rule-ch-email').checked = !!(r.canais?.email);
+        document.getElementById('rule-ch-sms').checked   = !!(r.canais?.sms);
 
-                li.innerHTML = `
-        <div class="d-flex align-items-start gap-2">
-          <div class="flex-grow-1">
-            <div class="fw-semibold">${req.oaeName}</div>
-            <div class="text-muted">Alerta: ${TYPE_LABEL[req.type] || req.type}</div>
-          </div>
-          <div class="d-flex align-items-center gap-2">
-            <span class="badge ${badgeCls}">${statusTxt}</span>
-            <div class="form-check form-switch m-0" title="Ativar/Inativar">
-              <input class="form-check-input req-toggle" type="checkbox" ${req.active ? 'checked':''}>
-            </div>
-            <button class="btn btn-sm btn-outline-danger req-del" title="Excluir">
-              <i class="bi bi-trash"></i>
-            </button>
-          </div>
-        </div>
-      `;
-                listEl.appendChild(li);
-            });
+        // escopo por OAE (chips simples)
+        const chips = document.getElementById('rule-oae-chips'); chips.innerHTML='';
+        function addChip(name){
+            const sp=document.createElement('span'); sp.className='chip';
+            sp.innerHTML=`<span>${name}</span><span class="x">&times;</span>`;
+            sp.querySelector('.x').onclick=()=>{ sp.remove(); };
+            chips.appendChild(sp);
         }
-
-        // cria/atualiza pedidos para cada OAE selecionada
-        function addRequests(type){
-            var ids = getMonOaeIds();
-            if (!ids.length){
-                if (typeof showToast === 'function') showToast({title:'Atenção', message:'Selecione ao menos uma OAE.', variant:'warning'});
-                else alert('Selecione ao menos uma OAE.');
-                return;
+        (r.escopo.oaeNames||[]).forEach(addChip);
+        const inOae = document.getElementById('rule-oae-input');
+        inOae.onkeydown = function(e){
+            if(e.key==='Enter'){ e.preventDefault();
+                const v=this.value.trim(); if(v){ addChip(v); this.value=''; }
             }
-            if (!type){
-                if (typeof showToast === 'function') showToast({title:'Atenção', message:'Selecione um tipo de alerta.', variant:'warning'});
-                else alert('Selecione um tipo de alerta.');
-                return;
+        };
+
+        // SALVAR
+        document.getElementById('btn-save-rule').onclick = function(){
+            const idOld = document.getElementById('rule-id').value;
+
+            // escopo
+            const isOaeTab = document.querySelector('#escopo-oae').classList.contains('active');
+            const oaeNames = Array.from(chips.querySelectorAll('.chip span:first-child')).map(x=>x.textContent);
+            const escopo = (isOaeTab && oaeNames.length) ? {oaeIds:[], oaeNames} : {tipoId: selTipo.value};
+
+            const indId = document.getElementById('rule-indicador').value;
+            const cond  = document.getElementById('rule-cond').value;
+            const thr   = parseFloat(document.getElementById('rule-threshold').value||'0');
+            const dest  = document.getElementById('rule-dest').value.trim()
+                ? document.getElementById('rule-dest').value.split(',').map(s=>s.trim())
+                : ['Operação'];
+
+            // >>> LER OS TRÊS CHECKBOXES <<<
+            const tela  = document.getElementById('rule-ch-tela').checked;
+            const email = document.getElementById('rule-ch-email').checked;
+            const sms   = document.getElementById('rule-ch-sms').checked;
+
+            const sil   = parseInt(document.getElementById('rule-silence').value,10)||30;
+
+            let arr = regras();
+            if(idOld){
+                arr = arr.map(x=> x.id===idOld
+                    ? {...x, escopo, indicadorId:indId, condicao:cond, threshold:thr,
+                        destinatarios:dest, canais:{tela,email,sms}, janelaSilencioMin:sil }
+                    : x);
+            }else{
+                arr.push({ id:'r_'+Date.now(), escopo, indicadorId:indId, condicao:cond,
+                    threshold:thr, destinatarios:dest, canais:{tela,email,sms},
+                    janelaSilencioMin:sil, ativa:true, ultimoDisparoAt:null });
             }
+            setRegras(arr); modal.hide(); renderRulesTable();
+            showToast({title:'Regra', message:'Regra salva.', variant:'success'});
+        };
 
-            // adiciona (ou reativa) um pedido por OAE
-            var created = 0;
-            ids.forEach(function(oaeId){
-                var oaeName = getOaeNameById(oaeId);
-                var key = type + '|' + oaeId;
-                var found = monRequests.find(function(r){ return r.key === key; });
-                if (found){
-                    found.active = true; // reativa se já existia
-                } else {
-                    monRequests.push({
-                        id: 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2),
-                        key: key,
-                        oaeId: oaeId,
-                        oaeName: oaeName,
-                        type: type,
-                        active: true,
-                        createdAt: Date.now()
-                    });
-                    created++;
-                }
-            });
+        modal.show();
+    }
 
-            renderList();
-
-            if (typeof showToast === 'function') {
-                var msg = created ? 'Pedido(s) criado(s) com sucesso.' : 'Pedido(s) atualizado(s).';
-                showToast({ title:'Monitoramento', message: msg, variant:'success' });
-            }
+    function simulateRule(id){
+        const r = regras().find(x=>x.id===id); if(!r){ return; }
+        if(!r.ativa){ showToast({title:'Silenciosa', message:'Regra está inativa.', variant:'secondary'}); return; }
+        const now = Date.now();
+        if(r.ultimoDisparoAt && (now - r.ultimoDisparoAt) < (r.janelaSilencioMin||30)*60000){
+            showToast({title:'Silenciado', message:'Dentro da janela de silêncio.', variant:'secondary'}); return;
         }
+        // valor simulado (para PoC). Se indicador for velocidade, gera 12–40 km/h; se índice, 10–80%; senão 1–10.
+        let val = 0, unit = UNIT_BY_IND[r.indicadorId]||'';
+        if(r.indicadorId==='velocidade') val = Math.round( (12 + Math.random()*28) * 10 ) / 10;
+        else if(r.indicadorId==='indice_congestionamento') val = Math.round( (10 + Math.random()*70) );
+        else if(r.indicadorId==='tempo_travessia' || r.indicadorId==='duracao_lentidao') val = Math.round( (5 + Math.random()*25) );
+        else val = Math.round(1 + Math.random()*9);
 
-        // eventos
-        if (btn){
-            btn.addEventListener('click', function(){
-                addRequests(sel ? sel.value : '');
-            });
+        const pass =
+            (r.condicao==='<') ? (val < r.threshold) :
+                (r.condicao==='>') ? (val > r.threshold) :
+                    (Math.abs(val - r.threshold) < 1e-9);
+
+        const scopeName = r.escopo.tipoId ? (tipos().find(t=>t.id===r.escopo.tipoId)?.nome||'Tipo') : (r.escopo.oaeNames||['OAE']).join(', ');
+        if(pass){
+            r.ultimoDisparoAt = now; setRegras(regras().map(x=>x.id===r.id? r : x));
+            showToast({ title:'Alerta em Tela', variant:'warning',
+                message:`${scopeName} • ${(indicadores().find(i=>i.id===r.indicadorId)?.nome||r.indicadorId)} ${r.condicao} ${r.threshold}${unit?(' '+unit):''}. Valor medido: <b>${val}${unit?(' '+unit):''}</b>` });
+        }else{
+            showToast({ title:'Sem disparo', variant:'info',
+                message:`Condição não satisfeita. Valor medido: ${val}${unit?(' '+unit):''}` });
         }
-
-        if (clearAll){
-            clearAll.addEventListener('click', function(){
-                if (!monRequests.length) return;
-                monRequests = [];
-                renderList();
-                if (typeof showToast === 'function') showToast({ title:'Limpo', message:'Todos os pedidos foram removidos.', variant:'secondary' });
-            });
-        }
-
-        // delegação para excluir / ativar-inativar
-        listEl.addEventListener('click', function(ev){
-            var target = ev.target;
-            var li = target.closest('li.list-group-item');
-            if (!li) return;
-            var id = li.dataset.reqId;
-
-            // excluir
-            if (target.closest('.req-del')){
-                monRequests = monRequests.filter(function(r){ return r.id !== id; });
-                renderList();
-                if (typeof showToast === 'function') showToast({ title:'Excluído', message:'Pedido removido.', variant:'secondary' });
-                return;
-            }
-        });
-
-        // mudança do switch Ativo/Inativo
-        listEl.addEventListener('change', function(ev){
-            if (!ev.target.classList.contains('req-toggle')) return;
-            var li = ev.target.closest('li.list-group-item'); if (!li) return;
-            var id = li.dataset.reqId;
-            var req = monRequests.find(function(r){ return r.id === id; });
-            if (!req) return;
-            req.active = !!ev.target.checked;
-            renderList();
-            if (typeof showToast === 'function') {
-                showToast({ title:'Status', message: req.active ? 'Pedido ativado.' : 'Pedido inativado.', variant: req.active ? 'success' : 'secondary' });
-            }
-        });
-
-        // primeira renderização
-        renderList();
-    })();
+    }
 </script>
 
 <script>
-    /* ===== Lista de pedidos de alerta (UI local) ===== */
-    (function(){
-        var btn    = document.getElementById('mon-switch');      // teu botão "Monitorar alerta"
-        var sel    = document.getElementById('mon-category');    // select de tipo
-        var listEl = document.getElementById('mon-reqs');        // lista no card
-
-        // estado local (em window para reuso, se quiser)
-        window.monRequests = window.monRequests || []; // [{id,key,oaeId,oaeName,type,active,createdAt}]
-
-        var TYPE_LABEL = {
-            ACCIDENT:'Acidente',
-            JAM:'Congestionamento',
-            ROAD_CLOSED:'Via interditada',
-            HAZARD:'Perigo',
-            SEMAFORO_OFF:'Semáforo desligado'
-        };
-
-        function getMonOaeIds(){ return (window.monSelectedOAEIds || []).slice(); }
-        function getOaeNameById(id){
-            var pl = (typeof getPolylineById==='function') ? getPolylineById(id) : null;
-            return (pl && pl.__oaeName) ? pl.__oaeName : 'OAE';
-        }
-
-        function renderList(){
-            if (!listEl) return;
-            listEl.innerHTML = '';
-            if (!window.monRequests.length){
-                listEl.innerHTML = '<li class="list-group-item text-muted">Nenhum pedido de monitoramento ativo.</li>';
-                return;
-            }
-            window.monRequests.forEach(function(req){
-                var li = document.createElement('li');
-                li.className = 'list-group-item d-flex justify-content-between align-items-center';
-                li.dataset.reqId = req.id;
-
-                var badgeCls = req.active ? 'text-bg-success' : 'text-bg-secondary';
-                var statusTxt = req.active ? 'Ativo' : 'Inativo';
-
-                li.innerHTML = `
-        <div>
-          <div class="fw-semibold">${req.oaeName}</div>
-          <div class="text-muted">Alerta: ${TYPE_LABEL[req.type] || req.type}</div>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-          <span class="badge ${badgeCls}">${statusTxt}</span>
-          <div class="form-check form-switch m-0" title="Ativar/Inativar">
-            <input class="form-check-input req-toggle" type="checkbox" ${req.active ? 'checked' : ''}>
-          </div>
-          <button class="btn btn-sm btn-outline-danger req-del" title="Excluir">
-            <i class="bi bi-trash"></i>
-          </button>
-        </div>
-      `;
-                listEl.appendChild(li);
-            });
-        }
-
-        function addRequests(type){
-            var ids = getMonOaeIds();
-            if (!type){
-                if (typeof showToast==='function') showToast({title:'Atenção', message:'Selecione um tipo de alerta.', variant:'warning'}); else alert('Selecione um tipo de alerta.');
-                return;
-            }
-            if (!ids.length){
-                if (typeof showToast==='function') showToast({title:'Atenção', message:'Selecione ao menos uma OAE.', variant:'warning'}); else alert('Selecione ao menos uma OAE.');
-                return;
-            }
-
-            var created = 0;
-            ids.forEach(function(oaeId){
-                var key = type + '|' + oaeId;
-                var found = window.monRequests.find(function(r){ return r.key === key; });
-                if (found){
-                    found.active = true; // reativa se já existia
-                } else {
-                    window.monRequests.push({
-                        id: 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2),
-                        key: key,
-                        oaeId: oaeId,
-                        oaeName: getOaeNameById(oaeId),
-                        type: type,
-                        active: true,
-                        createdAt: Date.now()
-                    });
-                    created++;
-                }
-            });
-
-            renderList();
-            if (typeof showToast==='function'){
-                showToast({ title:'Status de alertas', message: created ? 'Pedido(s) criado(s) com sucesso.' : 'Pedido(s) atualizado(s).', variant:'success' });
-            }
-        }
-
-        // Garantir que o botão NÃO vire "Parar monitoramento" (remove listeners antigos)
-        if (btn){
-            var clone = btn.cloneNode(true);
-            btn.parentNode.replaceChild(clone, btn);
-            clone.classList.remove('btn-danger'); // fica sempre primário
-            clone.classList.add('btn-primary');
-            clone.innerHTML = '<i class="bi bi-play-circle"></i> Monitorar alerta';
-            clone.addEventListener('click', function(){
-                addRequests(sel ? sel.value : '');
-            });
-        }
-
-        // excluir e ativar/inativar
-        if (listEl){
-            listEl.addEventListener('click', function(ev){
-                var li = ev.target.closest('li.list-group-item'); if (!li) return;
-                var id = li.dataset.reqId;
-                if (ev.target.closest('.req-del')){
-                    window.monRequests = window.monRequests.filter(function(r){ return r.id !== id; });
-                    renderList();
-                    if (typeof showToast==='function') showToast({ title:'Excluído', message:'Pedido removido.', variant:'secondary' });
-                }
-            });
-            listEl.addEventListener('change', function(ev){
-                if (!ev.target.classList.contains('req-toggle')) return;
-                var li = ev.target.closest('li.list-group-item'); if (!li) return;
-                var id = li.dataset.reqId;
-                var req = window.monRequests.find(function(r){ return r.id === id; });
-                if (!req) return;
-                req.active = !!ev.target.checked;
-                renderList();
-                if (typeof showToast==='function'){
-                    showToast({ title:'Status', message: req.active ? 'Pedido ativado.' : 'Pedido inativado.', variant: req.active ? 'success' : 'secondary' });
-                }
-            });
-        }
-
-        renderList();
-    })();
+    window.addEventListener('load', initMap);
 </script>
-
 
 <script src="https://maps.google.com/maps/api/js?v=beta&libraries=visualization,drawing,geometry,places&key=AIzaSyCd3zT_keK2xr7T6ujvR3TvLj5c9u0PtsM&callback=Function.prototype"></script>
+
+<script>
+    // === PATCH: fazer os alertas aparecerem novamente usando o arquivo local ===
+
+    // caminho do arquivo local com alertas/jams
+    const DATA_ALERTS = 'data/obras-arte-alerts-jams.json';
+
+    // cache em memória para não reler toda hora
+    let __alertsFC = null;
+
+    // garante que o painel de alertas não fique escondido
+    window.addEventListener('load', function(){
+        const box = document.getElementById('alerts-summary');
+        if (box) box.classList.remove('d-none');
+    });
+
+    // ---- loader/normalizador do arquivo local
+    function loadLocalAlertsFC(){
+        if (__alertsFC) return Promise.resolve(__alertsFC);
+        return fetch(DATA_ALERTS).then(r=>r.json()).then(json=>{
+            const features = [];
+
+            // Caso 1: já venha como FeatureCollection
+            if (json && json.type && /featurecollection/i.test(json.type) && Array.isArray(json.features)) {
+                json.features.forEach(f=>{
+                    if (f && f.geometry && f.geometry.type === 'Point') features.push(f);
+                });
+            }
+
+            // Caso 2: estrutura { alerts:[], jams:[] } (igual ao mock antigo)
+            if (Array.isArray(json.alerts)) {
+                json.alerts.forEach(a=>{
+                    if (a.point && a.point.geometry && a.point.geometry.type==='Point') {
+                        features.push({
+                            type:'Feature',
+                            properties:{
+                                name:a.name || (a.point.properties && a.point.properties.name) || '',
+                                type:a.type || null,
+                                alert_type:a.alert_type || null,
+                                street:a.street || null,
+                                date:a.date || null,
+                                hour:a.hour || null
+                            },
+                            geometry:a.point.geometry
+                        });
+                    }
+                });
+            }
+            if (Array.isArray(json.jams)) {
+                json.jams.forEach(a=>{
+                    if (a.point && a.point.geometry && a.point.geometry.type==='Point') {
+                        features.push({
+                            type:'Feature',
+                            properties:{
+                                name:a.name || (a.point.properties && a.point.properties.name) || '',
+                                type:a.type || null,
+                                alert_type:'JAM',
+                                street:a.street || null,
+                                date:a.date || null,
+                                hour:a.hour || null
+                            },
+                            geometry:a.point.geometry
+                        });
+                    }
+                });
+            }
+
+            __alertsFC = { type:'FeatureCollection', features };
+            return __alertsFC;
+        });
+    }
+
+    // ---- helpers de categoria/ícone (usa CAT_STYLE já existente)
+    function _catKey(t){
+        if(!t) return 'JAM';
+        t = String(t).toUpperCase();
+        if (t.includes('ACCIDENT')) return 'ACCIDENT';
+        if (t.includes('ROAD_CLOSED') || t.includes('ROAD_CLOSURE')) return 'ROAD_CLOSED';
+        if (t.includes('HAZARD')) return 'HAZARD';
+        if (t.includes('JAM')) return 'JAM';
+        return 'JAM';
+    }
+    function _glyphIcon(fill,glyph){
+        const svg = "<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24'>"
+            + "<circle cx='12' cy='12' r='9' fill='"+fill+"' stroke='#333' stroke-width='1'/>"
+            + "<text x='12' y='15' text-anchor='middle' font-size='12' fill='#111' font-family='Segoe UI Emoji, Apple Color Emoji, Noto Color Emoji, Arial, sans-serif'>"+glyph+"</text>"
+            + "</svg>";
+        return { url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg),
+            scaledSize:new google.maps.Size(22,22), anchor:new google.maps.Point(11,11) };
+    }
+
+    // ---- estado de marcadores por categoria (reutiliza arrays globais já existentes)
+    function _resetMarkers(){
+        for (var k in markersByCat){
+            (markersByCat[k]||[]).forEach(m=>m.setMap(null));
+            markersByCat[k] = [];
+        }
+        alertMarkers.forEach(m=>m.setMap(null));
+        alertMarkers.length = 0;
+    }
+
+    // ---- render no mapa + contadores
+    function _renderAlerts(fc){
+        if(!fc || !fc.features) return 0;
+        _resetMarkers();
+
+        fc.features.forEach(f=>{
+            if(!f.geometry || f.geometry.type!=='Point') return;
+            const [lng,lat] = f.geometry.coordinates;
+            const p = f.properties || {};
+            const cat = _catKey(p.alert_type || p.type);
+            const sty = (window.CAT_STYLE && CAT_STYLE[cat]) || {fill:'#ffb300', glyph:'•'};
+            const icon = _glyphIcon(sty.fill, sty.glyph);
+
+            const m = new google.maps.Marker({
+                position:{lat,lng}, icon, zIndex:100, map: layersEnabled.alerts ? map : null
+            });
+            m.addListener('click', function(){
+                const title = (p.alert_type || p.type || 'Alerta').replace(/_/g,' ');
+                const when  = [p.date,p.hour].filter(Boolean).join(' ');
+                const street= p.street||'';
+                info.setContent('<div><b>'+title+'</b>'+(street?'<br>'+street:'')+(when?'<br><small>'+when+'</small>':'')+'</div>');
+                info.open(map,m);
+            });
+
+            alertMarkers.push(m);
+            (markersByCat[cat]|| (markersByCat[cat]=[])).push(m);
+        });
+
+        // atualiza contadores
+        const box = document.getElementById('alerts-summary');
+        if (box) {
+            box.classList.remove('d-none');
+            ['ACCIDENT','HAZARD','JAM','ROAD_CLOSED'].forEach(cat=>{
+                const card = box.querySelector('[data-cat="'+cat+'"]');
+                if (card) {
+                    const n = (markersByCat[cat]||[]).length;
+                    const span = card.querySelector('.count-num');
+                    if (span) span.textContent = n;
+                }
+            });
+            // binds dos switches
+            const sws = box.querySelectorAll('.cat-toggle');
+            sws.forEach(sw=>{
+                sw.onchange = function(ev){
+                    const cat = ev.target.closest('[data-cat]')?.getAttribute('data-cat');
+                    const on  = ev.target.checked && layersEnabled.alerts;
+                    (markersByCat[cat]||[]).forEach(m=>m.setMap(on?map:null));
+                };
+            });
+        }
+
+        // aplica visibilidade atual
+        (function applyVisibility(){
+            const b = document.getElementById('alerts-summary');
+            function isOn(cat){
+                const sw = b ? b.querySelector('[data-cat="'+cat+'"] .cat-toggle') : null;
+                return layersEnabled.alerts && (!sw || sw.checked);
+            }
+            for (var cat in markersByCat){
+                (markersByCat[cat]||[]).forEach(m=>m.setMap(isOn(cat)?map:null));
+            }
+        })();
+
+        return alertMarkers.length;
+    }
+
+    // ---- função que filtra pelo(s) nome(s) das OAEs selecionadas e renderiza
+    function fetchAlertsForSelected(){
+        if(!selectedOAEIds.length){ _resetMarkers(); return Promise.resolve(0); }
+
+        const namesSet = {};
+        selectedOAEIds.forEach(id=>{
+            const pl = getPolylineById(id);
+            if (pl && pl.__oaeName) namesSet[pl.__oaeName] = true;
+        });
+        const names = Object.keys(namesSet);
+
+        return loadLocalAlertsFC().then(fc=>{
+            const feats = fc.features.filter(f=>{
+                const n = (f.properties && (f.properties.oae_name || f.properties.name || '')) || '';
+                return names.some(x => x.toLowerCase().trim() === n.toLowerCase().trim());
+            });
+            const count = _renderAlerts({type:'FeatureCollection', features:feats});
+            setStatus('OAEs selecionadas: '+selectedOAEIds.length+' • Alertas: '+count);
+            updateWazeUpdated();
+            return count;
+        }).catch(err=>{
+            console.error('Erro ao ler alertas locais:', err);
+            setStatus('Falha ao carregar alertas locais.');
+            return 0;
+        });
+    }
+
+    // ---- sobrescreve duas funções para acionar os alertas
+    (function overrideSelectionFns(){
+        // guarda referências antigas (se precisar)
+        const _oldAdd = addOAEByPolyline;
+        const _oldClear = clearOaeFilter;
+
+        // substitui addOAEByPolyline para também buscar alertas
+        addOAEByPolyline = function(pl, zoom){
+            // reaproveita lógica original:
+            if (selectedOAEIds.indexOf(pl.__id) !== -1) return;
+            selectedOAEIds.push(pl.__id);
+            renderChips();
+            if (typeState[pl.__oaeType] === false) {
+                typeState[pl.__oaeType] = true; updateOAEsVisibility();
+                var id = 't_' + btoa(pl.__oaeType).replace(/=/g,''); var cb = document.getElementById(id); if (cb) cb.checked = true;
+            }
+            setSelectedStyle(pl, true);
+            drawAreaForPolyline(pl, 500);
+            if (zoom) fitToSelectedOAEs({ maxZoom: 15 });
+            setStatus('OAEs selecionadas: ' + selectedOAEIds.length);
+
+            // NOVO: carrega e mostra alertas relativos às OAEs selecionadas
+            fetchAlertsForSelected();
+        };
+
+        // substitui clearOaeFilter para também limpar alertas
+        clearOaeFilter = function(){
+            selectedOAEIds.slice().forEach(function(id){
+                selectedOAEIds = selectedOAEIds.filter(x=>x!==id);
+                if (oaeAreaRectsById[id]) { oaeAreaRectsById[id].setMap(null); delete oaeAreaRectsById[id]; }
+                var pl = getPolylineById(id); if (pl) setSelectedStyle(pl, false);
+            });
+            renderChips();
+            // limpa marcadores de alerta
+            _resetMarkers();
+            setStatus('Filtro limpo. Selecione OAEs para ver alertas.');
+        };
+    })();
+</script>
+
 
 <div id="toast-ctr" class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1080;"></div>
 
