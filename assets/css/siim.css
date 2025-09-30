@@ -1,0 +1,416 @@
+
+:root{ --nav-h:56px; --rail-w:64px; --panel-w:500px; --rail-bg:#3F5660; --orange:#ff7a00; }
+html,body{ height:100%; } body{ overflow:hidden; background:#f6f7fb; }
+.navbar-green{ background:#3F5660 !important; }
+.navbar-green .navbar-brand{ color:#fff; }
+.navbar-green .btn-outline-light{ color:#fff; border-color:#fff; }
+.navbar-green .btn-outline-light:hover,.navbar-green .btn-outline-light.active{ color:#3F5660; background:#fff; border-color:#fff; }
+.btn-orange{ --bs-btn-color:#fff; --bs-btn-bg:var(--orange); --bs-btn-border-color:var(--orange);
+    --bs-btn-hover-bg:#e56e00; --bs-btn-hover-border-color:#e56e00;
+    --bs-btn-active-bg:#cc6200; --bs-btn-active-border-color:#cc6200;
+    --bs-btn-focus-shadow-rgb:255,122,0; }
+#map{ height:calc(100vh - var(--nav-h)); }
+
+.right-shell{ position:absolute; z-index:1000; top:var(--nav-h); right:0; height:calc(100vh - var(--nav-h)); display:flex; flex-direction:row-reverse; pointer-events:none; }
+.rail{ width:var(--rail-w); height:100%; background:var(--rail-bg); display:flex; flex-direction:column; align-items:center; gap:.75rem; padding:.75rem .5rem; box-shadow:-2px 0 8px rgba(0,0,0,.18); pointer-events:auto; }
+.rail .rail-btn{ width:44px; height:44px; border:0; border-radius:10px; display:flex; align-items:center; justify-content:center; background:#4c6570; color:#fff; font-size:1.25rem; transition:transform .15s, background .2s; }
+.rail .rail-btn:hover{ background:#5a7683; transform:translateY(-1px); }
+
+
+.sidepanel{ width:0; height:100%; overflow:hidden; background:#fff; border-left:1px solid rgba(0,0,0,.1); box-shadow:-10px 0 18px rgba(0,0,0,.12); pointer-events:auto; transition:width .35s cubic-bezier(.22,.61,.36,1); }
+.right-shell.open .sidepanel{ width:var(--panel-w); }
+@media(max-width:540px){ .right-shell.open .sidepanel{ width:min(95vw, var(--panel-w)); } }
+.sp-body{ opacity:0; transition:opacity .25s .12s ease; height:100%; overflow:auto; }
+.right-shell.open .sp-body{ opacity:1; }
+.sp-header{ display:flex; align-items:center; justify-content:space-between; padding:.6rem .85rem; border-bottom:1px solid rgba(0,0,0,.08); background:#f9fafb; position: sticky;
+    top: 0; z-index: 3;}
+.sp-header .title{ font-weight:600; }
+
+.chips-control{ display:flex; align-items:center; flex-wrap:wrap; gap:.25rem; width:100%; min-height:38px; padding:.25rem .5rem; background:#fff; border:1px solid #ced4da; border-radius:.375rem; }
+.chip{ display:inline-flex; align-items:center; gap:.35rem; background:#e9f2ff; color:#0b5ed7; border:1px solid #cfe2ff; padding:.15rem .5rem; border-radius:999px; font-size:.85rem; }
+.chip .x{ cursor:pointer; font-weight:700; line-height:1; }
+.chips-input{ flex:1 1 140px; min-width:120px; border:0; outline:0; height:30px; }
+
+.tiny-dot{ width:10px; height:10px; border-radius:2px; display:inline-block; }
+.status-muted{ color:#6b7280; }
+
+.alerts-grid{ display:grid; grid-template-columns:1fr 1fr; gap:.5rem; }
+@media(max-width:480px){ .alerts-grid{ grid-template-columns:1fr; } }
+.alert-card{ border:0; border-radius:.55rem; display:flex; flex-direction:column; align-items:flex-start; justify-content:space-between; padding:.55rem .6rem; min-height:92px; box-shadow:0 2px 10px rgba(0,0,0,.08); }
+.alert-title{ display:flex; align-items:center; gap:.35rem; font-weight:600; font-size:.85rem; color:#111; }
+.alert-ico{ font-size:1.05rem; line-height:1; color:#111; }
+.alert-count{ font-size:1.15rem; font-weight:800; color:#111; }
+.alert-switch .form-check-label{ font-size:.75rem; color:#111; opacity:.9; }
+.alert-switch .form-check-input{ transform:scale(.9); }
+.card-accident{ background:#ffa726; color:#111; }
+.card-hazard{ background:#ef5350; color:#111; }
+.card-jam{ background:#42a5f5; color:#111; }
+.card-roadclosed{ background:#c62828; color:#111; }
+
+.sidepanel.disabled .sp-body{ opacity:.45; pointer-events:none; }
+.right-shell.open #btn-toggle i{ transform:rotate(180deg); transition:transform .25s ease; }
+
+.badge-traffic{ font-weight:700; border-radius:999px; padding:.25rem .5rem; min-width:72px; display:inline-block; text-align:center; color:#111; }
+.badge-t1{ background:#a5d6a7; } .badge-t2{ background:#ffe082; } .badge-t3{ background:#ffcc80; } .badge-t4{ background:#ef9a9a; } .badge-t5{ background:#ffab91; }
+
+.sp-body .panel-pad{ height:20px; } @media (max-height:740px){ .sp-body .panel-pad{ height:60px; } }
+.feed{ max-height:320px; overflow:auto; }
+.feed .item{ border-bottom:1px solid rgba(0,0,0,.075); padding:.5rem .25rem; }
+.feed .t{ font-weight:600; }
+.feed .d{ color:#6b7280; font-size:.85rem; }
+.table-sm td, .table-sm th{ vertical-align:middle; }
+
+/* Ações (Tipos & Indicadores) – ícones iguais e alinhados */
+#panel-ind td.text-end .btn{
+    --size:38px;
+    width:var(--size);
+    height:var(--size);
+    padding:0;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:.7rem;
+}
+
+/* Ícone com tamanho consistente */
+#panel-ind td.text-end .btn i{ font-size:1rem; }
+
+/* Deixa o "editar" (outline-secondary) com hover visível igual aos outros */
+#panel-ind td.text-end .btn-outline-secondary{
+    color:#495057;         /* cinza escuro para não parecer desabilitado */
+    border-color:#adb5bd;  /* borda um pouco mais forte */
+}
+#panel-ind td.text-end .btn-outline-secondary:hover,
+#panel-ind td.text-end .btn-outline-secondary:focus{
+    background:#495057;
+    border-color:#495057;
+    color:#fff;
+}
+
+/* Se quiser empilhar verticalmente e com espaço uniforme: */
+#panel-ind td.text-end .actions-stack{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:.4rem;
+}
+
+
+
+/* ===== Regras (tabela mais legível e responsiva) ===== */
+#panel-alerts .rules-wrap{ position:relative; }
+
+#panel-alerts table.rules-table{
+    border-collapse:separate; border-spacing:0; width:100%;
+}
+#panel-alerts table.rules-table thead th{
+    font-size:.8rem; text-transform:uppercase; letter-spacing:.02em;
+    color:#6b7280; background:#f8f9fb; position:sticky; top:0; z-index:1;
+}
+#panel-alerts table.rules-table td,
+#panel-alerts table.rules-table th{
+    vertical-align:middle; padding:.65rem .75rem;
+}
+#panel-alerts table.rules-table tbody tr{
+    background:#fff;
+}
+#panel-alerts table.rules-table tbody tr+tr td{
+    border-top:1px solid rgba(0,0,0,.06);
+}
+
+/* ===== Painel de Tipos (legibilidade) ===== */
+#panel-ind .table thead th{
+    background:#f3f5f7; color:#374151; border-bottom:2px solid rgba(0,0,0,.12);
+}
+#panel-ind .table tbody tr:nth-child(even){ background:#fafbfc; }
+#panel-ind .table tbody tr:hover{ background:#eef3f8; }
+#panel-ind .table td, #panel-ind .table th{
+    vertical-align:middle; padding:.65rem .75rem;
+}
+#panel-ind .table .small{ color:#6b7280; }
+
+#panel-ind .badge-count{
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:26px; height:24px; padding:0 .4rem; border-radius:999px;
+    font-weight:700; font-size:.8rem; background:#e9eef8; color:#1f2a44;
+    border:1px solid #cfd7ea;
+}
+
+/* botões de ação mais discretos (mesmo tamanho) */
+#panel-ind .btn-ico-sm{
+    width:34px; height:34px; padding:0; border-radius:.55rem; display:inline-flex;
+    align-items:center; justify-content:center;
+}
+#panel-ind .btn-outline-secondary{ color:#475569; border-color:#cbd5e1; }
+#panel-ind .btn-outline-secondary:hover{ background:#f1f5f9; }
+
+
+/* colunas com largura mínima para não “quebrar” o layout */
+#panel-alerts .col-id{ width:56px; }
+#panel-alerts .col-scope{ min-width:220px; }
+#panel-alerts .col-ind{ min-width:220px; }
+#panel-alerts .col-cond{ width:110px; text-align:center; }
+#panel-alerts .col-thr{ width:150px; }
+#panel-alerts .col-dest{ min-width:160px; }
+#panel-alerts .col-ch{ width:170px; }
+#panel-alerts .col-sil{ width:110px; }
+#panel-alerts .col-st{ width:92px; text-align:center; }
+#panel-alerts .col-act{ width:170px; }
+
+
+
+/* texto multi-linha sem colidir */
+#panel-alerts .cell-wrap{ white-space:normal; line-height:1.25; }
+#panel-alerts .small-muted{ color:#6b7280; font-size:.85rem; }
+
+/* grupo de botões/ícones com tamanho padronizado */
+.btn-ico{
+    --size:34px;
+    width:var(--size); height:var(--size);
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:0; border-radius:.55rem;
+}
+.btn-ico i{ font-size:1rem; }
+
+/* badges “pill” para canais/destinatários */
+.badge-pill{
+    border-radius:999px; padding:.35rem .6rem; font-weight:600;
+}
+
+/* switch mais firme */
+.form-switch .form-check-input{ transform:scale(1.05); cursor:pointer; }
+
+/* ===== Mobile: vira cartões (<= 768px) ===== */
+@media (max-width: 768px){
+    #panel-alerts table.rules-table{ display:none; }
+    #panel-alerts .rules-cards{ display:grid; gap:.65rem; }
+    #panel-alerts .rule-card{
+        background:#fff; border:1px solid rgba(0,0,0,.08);
+        border-radius:.75rem; padding:.75rem; box-shadow:0 2px 8px rgba(0,0,0,.05);
+    }
+    #panel-alerts .rule-card .line{
+        display:flex; justify-content:space-between; align-items:center; gap:.75rem;
+        padding:.25rem 0;
+    }
+    #panel-alerts .rule-card .line+.line{ border-top:1px dashed rgba(0,0,0,.08); }
+    #panel-alerts .rule-card .title{ font-weight:700; }
+    #panel-alerts .rule-card .meta{ color:#6b7280; font-size:.9rem; }
+    #panel-alerts .rule-card .actions{ display:flex; gap:.4rem; }
+}
+
+/* ===== Regras em cards ===== */
+.rules-cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    gap:.85rem;
+}
+.rule-card{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:.8rem;
+    padding:.9rem .95rem;
+    box-shadow:0 2px 10px rgba(0,0,0,.06);
+}
+.rule-head{ display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
+.rule-scope{ font-weight:600; line-height:1.2; }
+.rule-ind{ color:#4b5563; margin:.15rem 0 .5rem; }
+.rule-metas{ display:flex; flex-wrap:wrap; gap:.35rem; margin-bottom:.5rem; }
+.rule-metas .badge{ font-weight:600; }
+.rule-channels{ display:flex; gap:.35rem; flex-wrap:wrap; }
+.rule-actions{ margin-top:.75rem; }
+.rule-actions .btn{ width:100%; }
+
+/* ===== Detalhe da condição (cards) ===== */
+.rule-condition{
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    padding:.55rem .65rem;
+    border-radius:.6rem;
+    font-size:.95rem;
+    line-height:1.2;
+    margin:.4rem 0 .6rem;
+}
+.rule-condition .lab{ color:#475569; margin-right:.35rem; font-weight:600; }
+.rule-condition .ind{ font-weight:700; }
+.rule-condition .op{ font-weight:700; }
+.rule-condition .thr{ font-weight:700; }
+.rule-condition .unit{ color:#64748b; margin-left:.2rem; }
+
+/* Esconde o cabeçalho da tabela no painel de Regras (cards) */
+#panel-alerts table thead{ display:none !important; }
+
+
+/* ===== Tema mais contrastado — Regra de Alerta & tabelas ===== */
+
+/* Fundo do modal levemente cinza e bordas mais visíveis */
+#modalRegra .modal-content{
+    background:#f8f9fa;
+    border:1px solid rgba(0,0,0,.2);
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+}
+#modalRegra .modal-header{
+    border-bottom:1px solid rgba(0,0,0,.25);
+    background:#eef1f4;
+}
+#modalRegra .modal-title{ color:#222; font-weight:700; }
+
+/* Labels mais fortes */
+#modalRegra .form-label{ color:#333; font-weight:600; }
+
+/* Inputs com borda mais escura e foco claro */
+#modalRegra .form-control,
+#modalRegra .form-select{
+    border-color:#999;
+    background:#fff;
+}
+#modalRegra .form-control:focus,
+#modalRegra .form-select:focus{
+    border-color:#666;
+    box-shadow:0 0 0 .15rem rgba(0,0,0,.08);
+}
+
+/* Input-group (unidade) com contraste */
+#modalRegra .input-group-text{
+    background:#eceff3;
+    color:#222;
+    border-color:#999;
+}
+
+/* Abas com destaque na ativa */
+#modalRegra .nav-tabs{
+    border-bottom:1px solid rgba(0,0,0,.25);
+}
+#modalRegra .nav-tabs .nav-link{
+    color:#555;
+    font-weight:600;
+}
+#modalRegra .nav-tabs .nav-link.active{
+    color:#111;
+    background:#e9edf2;
+    border-color:rgba(0,0,0,.25) rgba(0,0,0,.25) #e9edf2;
+}
+
+/* Select “Silenciar por” mais marcado */
+#modalRegra #rule-silence{
+    border-color:#999;
+}
+
+/* Botões do rodapé com contraste */
+#modalRegra .modal-footer{
+    border-top:1px solid rgba(0,0,0,.25);
+}
+#modalRegra .btn-secondary{
+    background:#e2e6ea; color:#222; border-color:#b5bcc3;
+}
+#modalRegra .btn-secondary:hover{ background:#d7dce1; }
+
+/* Chips das OAEs com borda e texto mais escuros */
+#modalRegra #rule-oae-chips .chip{
+    background:#e6f0ff; color:#184e9e; border:1px solid #9fc3ff;
+}
+
+/* ===== Cabeçalhos/linhas de tabela (painel de regras) mais fortes ===== */
+#panel-alerts .table thead th{
+    background:#eef1f4 !important;
+    color:#444 !important;
+    border-bottom:2px solid rgba(0,0,0,.25) !important;
+}
+#panel-alerts .table tbody tr+tr td{
+    border-top:1px solid rgba(0,0,0,.18) !important;
+}
+
+/* Cards de resumo (Alertas) com borda levemente mais escura */
+.alert-card{
+    box-shadow:0 2px 10px rgba(0,0,0,.10);
+    border:1px solid rgba(0,0,0,.18);
+}
+
+/* Backdrop do modal um pouco mais escuro */
+.modal-backdrop.show{ opacity:.35; }
+
+
+/* Borda mais escura nos cards de regra */
+#panel-alerts .rule-card{
+    border-color:#9aa3ae;           /* cinza médio (#6b7280 se quiser ainda mais forte) */
+}
+
+/* (opcional) destacar no hover/foco */
+#panel-alerts .rule-card:hover,
+#panel-alerts .rule-card:focus-within{
+    border-color:#6b7280;
+    box-shadow:0 2px 12px rgba(0,0,0,.10);
+}
+
+/* Bordas mais escuras no filtro (busca + select) */
+#panel-alerts .form-control,
+#panel-alerts .form-select{
+    border-color:#9aa3ae;            /* cinza médio */
+}
+
+/* Foco com ainda mais contraste e sem halo azul forte do Bootstrap */
+#panel-alerts .form-control:focus,
+#panel-alerts .form-select:focus{
+    border-color:#6b7280;
+    box-shadow:0 0 0 .15rem rgba(0,0,0,.10);  /* substitui o glow azul */
+}
+
+/* (opcional) estado hover */
+#panel-alerts .form-control:hover,
+#panel-alerts .form-select:hover{
+    border-color:#76808b;
+}
+
+/* Checkboxes mais escuros – apenas no modal de regra */
+#modalRegra .form-check-input{
+    /* borda mais marcada */
+    border-color:#6b7280;          /* cinza mais escuro */
+    width:1.05rem; height:1.05rem; /* leve aumento ajuda na leitura */
+}
+
+/* cor do tique/caixa quando marcado (suporta browsers modernos) */
+#modalRegra .form-check-input:checked{
+    background-color:#3F5660;      /* sua cor do topo (rail) */
+    border-color:#3F5660;
+}
+
+/* foco/hover com contraste sem “glow” azul do Bootstrap */
+#modalRegra .form-check-input:focus{
+    border-color:#4b5563;
+    box-shadow:0 0 0 .15rem rgba(0,0,0,.10);
+}
+#modalRegra .form-check-input:hover{
+    border-color:#4b5563;
+}
+
+/* (opcional) usar accent-color quando suportado */
+@supports (accent-color: auto){
+    #modalRegra .form-check-input{
+        accent-color:#3F5660;        /* muda borda e preenchimento nativo */
+        box-shadow:none;
+    }
+}
+
+/* todos iguais por padrão */
+.rail .rail-btn{ background:#4c6570; color:#fff; }
+.rail .rail-btn:hover{ background:#5a7683; }
+
+/* ativo fica verde */
+.rail .rail-btn.active{ background:#0b8c7d; }
+.rail .rail-btn.active:hover{ background:#0aa08f; }
+
+/* seção/título */
+#panel-ind .card-title, #panel-ind h6 { margin-bottom:.35rem; }
+#panel-ind .section { padding: .6rem .25rem .25rem; }
+
+/* linhas da tabela */
+#panel-ind table tbody tr { border-bottom:1px solid rgba(0,0,0,.08); }
+#panel-ind table tbody tr:hover { background:#f9fafb; }
+#panel-ind table thead th { background:#f3f5f8; }
+
+
+#panel-ind .col-idx   { width:36px;  text-align:center; }
+#panel-ind .col-tipo  { width:180px; }
+#panel-ind .col-desc  { min-width:280px; }
+#panel-ind .col-count { width:90px;  text-align:center; }
+#panel-ind .col-acoes { width:170px; text-align:right; }
+
