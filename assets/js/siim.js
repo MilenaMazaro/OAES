@@ -1,4 +1,4 @@
-/* SIIM – JS principal (mover para assets/js/siim.js) */
+/* SIIM – JS principal (seleção ÚNICA de OAE, sem tags) */
 "use strict";
 
 /* ===== Estado global ===== */
@@ -7,7 +7,7 @@ var oaeLayers = [], typePolylines = {};
 var alertMarkers = [], markersByCat = { ACCIDENT:[], HAZARD:[], JAM:[], ROAD_CLOSED:[] };
 var layersEnabled = { oaes:true, alerts:true };
 var typeState = {};
-var selectedOAEIds = [];
+var selectedOAEIds = [];                 // <= agora terá no máx. 1 id
 var monSelectedOAEIds = [];
 var allOaeNames = [];
 var oaeAreaRectsById = {};
@@ -38,7 +38,6 @@ function setPanel(tab){
     var pBell= document.getElementById('panel-alerts');
     var pInd = document.getElementById('panel-ind');
 
-    // largura do painel por aba
     const panelW = (tab === 'ind') ? '450px' : (tab === 'alerts' ? '400px' : '400px');
     document.documentElement.style.setProperty('--panel-w', panelW);
 
@@ -92,17 +91,21 @@ function initMap(){
     document.getElementById('btn-all').onclick  = function(){ setAllTypes(true); };
     document.getElementById('btn-none').onclick = function(){ setAllTypes(false); };
 
-    // chips OAEs
+    // Entrada única de OAE (datalist)
     var input = document.getElementById('oae-input');
-    input.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); tryAddOAE(input.value); }});
-    input.addEventListener('change', function(){ tryAddOAE(input.value); });
-    input.addEventListener('focus', openPanel);
+    if (input){
+        input.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); tryAddOAE(input.value); }});
+        input.addEventListener('change', function(){ tryAddOAE(input.value); });
+        input.addEventListener('focus', openPanel);
+    }
+    var btnClear = document.getElementById('oae-clear');
+    if (btnClear){ btnClear.addEventListener('click', clearOaeFilter); }
 
     fillTrafficSummary();
     updateWazeUpdated();
     fetchOAEs();
 
-    // Tipos & Indicadores (seed + render)
+    // Tipos & Indicadores
     ensureSeeds();
     renderTypesTable();
 
@@ -115,20 +118,19 @@ function initMap(){
     document.getElementById('btn-new-type').onclick = function(){ openTipoModal(); };
     document.getElementById('type-search').oninput = debounce(renderTypesTable, 180);
 
-    // Cadastrar OAE (abre modal + herança)
+    // Cadastrar OAE
     const btnNewOae = document.getElementById('btn-new-oae');
     if (btnNewOae) btnNewOae.onclick = openNewOaeModal;
 }
 
 const CLICK_TOLERANCE_M = 8;
 
-// atalhos simples dentro do painel de Tipos
+// atalhos simples no painel Tipos
 document.addEventListener('keydown', function(e){
     const isIndTab = (document.getElementById('panel-ind') && !document.getElementById('panel-ind').classList.contains('d-none'));
     if(!isIndTab) return;
     const tag = (e.target.tagName||'').toLowerCase();
     if(['input','textarea','select'].includes(tag)) return;
-
     if(e.key === '/'){ e.preventDefault(); document.getElementById('type-search')?.focus(); }
     if(e.key.toLowerCase() === 'n'){ e.preventDefault(); document.getElementById('btn-new-type')?.click(); }
 });
@@ -209,7 +211,8 @@ function showOAEInfo(pl, anchor){
 
 /* ===== Tipos (filtro) ===== */
 function buildTypeFilter(types){
-    var box = document.getElementById('oae-types'); box.innerHTML='';
+    var box = document.getElementById('oae-types'); if (!box) return;
+    box.innerHTML='';
     types.forEach(function(t){
         typeState[t]=true;
         var color = TYPE_COLORS[t] || '#1976d2';
@@ -250,23 +253,33 @@ function updateOAEsVisibility(){
 }
 function updateTypesBadge(){ var n=0; for(var k in typeState){ if(typeState.hasOwnProperty(k) && typeState[k]) n++; } var b=document.getElementById('types-badge'); if(b) b.textContent=n; }
 
-/* ===== Busca/Chips OAEs (painel OAEs) ===== */
+/* ===== Seleção ÚNICA de OAE (sem tags) ===== */
 function fillOaeSuggestions(){
     var namesMap={}, arr=[];
     oaeLayers.forEach(function(pl){ namesMap[pl.__oaeName]=true; });
     for(var n in namesMap){ if(namesMap.hasOwnProperty(n)) arr.push(n); }
     arr.sort((a,b)=>a.localeCompare(b));
     allOaeNames=arr;
-    var dl=document.getElementById('oaes-list'); dl.innerHTML='';
+
+    var dl=document.getElementById('oaes-list'); if(!dl) return;
+    dl.innerHTML='';
     allOaeNames.forEach(function(n){ var o=document.createElement('option'); o.value=n; dl.appendChild(o); });
+
+    // garante bind do botão limpar (se existir no HTML)
+    var btnClear = document.getElementById('oae-clear');
+    if (btnClear && !btnClear.__wired){ btnClear.__wired = true; btnClear.addEventListener('click', clearOaeFilter); }
 }
 function tryAddOAE(value){
     var name=(value||'').trim(); if(!name) return;
-    var found = allOaeNames.find(n=>n.toLowerCase()===name.toLowerCase()) || name;
+    var found = allOaeNames.find(n=>n.toLowerCase()===name.toLowerCase());
+    if (!found){ setStatus('OAE não encontrada.'); return; }
     var pl = getPolylinesByName(found)[0];
     if (pl) addOAEByPolyline(pl, true);
-    document.getElementById('oae-input').value=''; setPanel('oae');
+    // em vez de limpar, mantenha o nome escolhido no input
+    var input = document.getElementById('oae-input'); if (input) input.value = found;
+    setPanel('oae');
 }
+
 function drawAreaForPolyline(pl, meters){
     meters = meters || 500;
     var path = pl.getPath(); if(!path || path.getLength()===0) return;
@@ -285,40 +298,35 @@ function drawAreaForPolyline(pl, meters){
     });
 }
 function addOAEByPolyline(pl, zoom){
-    if (selectedOAEIds.indexOf(pl.__id) !== -1) return;
-    selectedOAEIds.push(pl.__id);
-    renderChips();
+    if (selectedOAEIds.length && selectedOAEIds[0] === pl.__id) return;
+    if (selectedOAEIds.length) removeOAEById(selectedOAEIds[0]);
+
+    selectedOAEIds = [pl.__id];
+
     if (typeState[pl.__oaeType] === false) {
         typeState[pl.__oaeType] = true; updateOAEsVisibility();
         var id = 't_' + btoa(pl.__oaeType).replace(/=/g,''); var cb = document.getElementById(id); if (cb) cb.checked = true;
     }
-    setSelectedStyle(pl, true); drawAreaForPolyline(pl, 500);
-    if (zoom) fitToSelectedOAEs({ maxZoom: 15 });
-    setStatus('OAEs selecionadas: ' + selectedOAEIds.length);
 
-    // quando seleciona OAE, também atualiza alertas
-    fetchAlertsForSelected();
+
+    var input = document.getElementById('oae-input'); if (input) input.value = pl.__oaeName || '';
+
+    setSelectedStyle(pl, true);
+    drawAreaForPolyline(pl, 500);
+    if (zoom) fitToSelectedOAEs({ maxZoom: 15 });
+    setStatus('OAE selecionada.');
+    var picked = document.getElementById('oae-picked');
+    if (picked) picked.textContent = 'Selecionada: ' + (pl.__oaeName||'');
+
+    if (typeof fetchAlertsForSelected === 'function') fetchAlertsForSelected();
 }
+
 function removeOAEById(id){
     selectedOAEIds = selectedOAEIds.filter(x=>x!==id);
-    renderChips();
     if (oaeAreaRectsById[id]) { oaeAreaRectsById[id].setMap(null); delete oaeAreaRectsById[id]; }
     var pl = getPolylineById(id); if (pl) setSelectedStyle(pl, false);
-    fitToSelectedOAEs({ maxZoom: 15 });
-    setStatus('OAEs selecionadas: ' + selectedOAEIds.length);
-
-    // atualiza alertas após remoção
-    fetchAlertsForSelected();
-}
-function renderChips(){
-    var box=document.getElementById('oae-chips'); box.innerHTML='';
-    selectedOAEIds.forEach(function(id){
-        var pl = getPolylineById(id); if(!pl) return;
-        var chip=document.createElement('span'); chip.className='chip';
-        chip.innerHTML='<span>'+pl.__oaeName+'</span><span class="x" title="Remover">&times;</span>';
-        chip.querySelector('.x').onclick=function(){ removeOAEById(id); };
-        box.appendChild(chip);
-    });
+    var picked = document.getElementById('oae-picked');
+    if (picked) picked.textContent = 'Nenhuma OAE selecionada.';
 }
 function fitToSelectedOAEs(opts){
     if(!selectedOAEIds.length) return;
@@ -340,9 +348,12 @@ function fitToSelectedOAEs(opts){
     });
 }
 function clearOaeFilter(){
-    selectedOAEIds.slice().forEach(removeOAEById);
-    selectedOAEIds = []; renderChips();
-    setStatus('Filtro limpo. Selecione OAEs para ver alertas.');
+    if (selectedOAEIds.length) removeOAEById(selectedOAEIds[0]);
+    selectedOAEIds = [];
+    var input = document.getElementById('oae-input'); if (input) input.value='';
+    setStatus('Seleção limpa. Escolha uma OAE.');
+    // limpa alertas no mapa
+    _resetMarkers(); updateAlertsVisibility();
 }
 
 /* ===== Util ===== */
@@ -352,7 +363,6 @@ function clearAll(){
     for (var id in oaeAreaRectsById){ if (oaeAreaRectsById[id]) oaeAreaRectsById[id].setMap(null); }
     oaeAreaRectsById = {};
     clearOaeFilter();
-    // limpa alertas também
     _resetMarkers();
     setStatus('Camadas limpas. Recarregue para buscar novamente.');
 }
@@ -448,14 +458,14 @@ function setTipoIndMap(m){ lsSet(LS_TIPO_IND,m); }
 function regras(){ return lsGet(LS_REGRAS,[]); }
 function setRegras(r){ lsSet(LS_REGRAS,r); }
 
-/* ===== Utils gerais ===== */
+/* ===== Utils ===== */
 function debounce(fn, wait){
     let t; return function(...args){
         clearTimeout(t); t = setTimeout(()=>fn.apply(this,args), wait);
     };
 }
 
-/* ======= Tipos & Indicadores ======= */
+/* ===== Tipos & Indicadores (CRUD/UI) ===== */
 function renderTypesTable(){
     const body = document.getElementById('types-body'); if(!body) return;
     const q = (document.getElementById('type-search')?.value || '').toLowerCase();
@@ -557,8 +567,7 @@ function openIndicadoresCanvas(tipoId){
     off.show();
 }
 
-/* ======= Regras ======= */
-const UNIT_BY_IND = {}; // será preenchido ao abrir modal/regra/render
+/* ===== Regras ===== */
 function renderRulesTable(){
     const tbody = document.getElementById('rules-body'); if(!tbody) return;
 
@@ -728,7 +737,7 @@ function openRuleModal(id){
     document.getElementById('rule-ch-email').checked = !!(r.canais?.email);
     document.getElementById('rule-ch-sms').checked   = !!(r.canais?.sms);
 
-    // escopo por OAE (chips)
+    // escopo por OAE (chips só dentro do modal de regra — permanece)
     const chips = document.getElementById('rule-oae-chips'); chips.innerHTML='';
     function addChip(name){
         const sp=document.createElement('span'); sp.className='chip';
@@ -748,7 +757,6 @@ function openRuleModal(id){
     document.getElementById('btn-save-rule').onclick = function(){
         const idOld = document.getElementById('rule-id').value;
 
-        // escopo
         const isOaeTab = document.querySelector('#escopo-oae').classList.contains('active');
         const oaeNames = Array.from(chips.querySelectorAll('.chip span:first-child')).map(x=>x.textContent);
         const escopo = (isOaeTab && oaeNames.length) ? {oaeIds:[], oaeNames} : {tipoId: selTipo.value};
@@ -813,10 +821,10 @@ function simulateRule(id){
     }
 }
 
-/* ====== Inicialização no load (mantém maps com callback neutro) ====== */
+/* ===== Inicialização ===== */
 window.addEventListener('load', initMap);
 
-/* ====== ALERTAS LOCAIS (PATCH) ====== */
+/* ===== ALERTAS LOCAIS (PATCH) ===== */
 const DATA_ALERTS = 'data/obras-arte-alerts-jams.json';
 let __alertsFC = null;
 
@@ -872,7 +880,6 @@ function loadLocalAlertsFC(){
         return __alertsFC;
     });
 }
-
 function _catKey(t){
     if(!t) return 'JAM';
     t = String(t).toUpperCase();
@@ -925,7 +932,6 @@ function _renderAlerts(fc){
         (markersByCat[cat]|| (markersByCat[cat]=[])).push(m);
     });
 
-    // contadores
     const box = document.getElementById('alerts-summary');
     if (box) {
         box.classList.remove('d-none');
@@ -937,7 +943,6 @@ function _renderAlerts(fc){
                 if (span) span.textContent = n;
             }
         });
-        // binds (rebind seguro)
         const sws = box.querySelectorAll('.cat-toggle');
         sws.forEach(sw=>{
             sw.onchange = function(ev){
@@ -948,12 +953,9 @@ function _renderAlerts(fc){
         });
     }
 
-    // aplica visibilidade atual
     updateAlertsVisibility();
     return alertMarkers.length;
 }
-
-/* ===== CORREÇÃO: função faltante para alternar visibilidade de alertas ===== */
 function updateAlertsVisibility(){
     const box = document.getElementById('alerts-summary');
     function isOn(cat){
@@ -965,8 +967,6 @@ function updateAlertsVisibility(){
         (markersByCat[cat]||[]).forEach(m=>m.setMap(isOn(cat)?map:null));
     }
 }
-
-/* filtra alertas pelos nomes das OAEs selecionadas */
 function fetchAlertsForSelected(){
     if(!selectedOAEIds.length){ _resetMarkers(); updateAlertsVisibility(); return Promise.resolve(0); }
 
@@ -993,7 +993,7 @@ function fetchAlertsForSelected(){
     });
 }
 
-/* ===== CORREÇÃO: função faltante Cadastrar OAE ===== */
+/* ===== Cadastrar OAE (modal) ===== */
 function openNewOaeModal(){
     const modalEl = document.getElementById('modalNewOAE');
     if (!modalEl) return;
@@ -1027,10 +1027,17 @@ function openNewOaeModal(){
         const name = (document.getElementById('oae-name').value||'').trim();
         const typeId = sel.value;
         if (!name){ alert('Informe o nome da OAE.'); return; }
-        // Apenas feedback visual (esta PoC não persiste OAE em storage)
         showToast({title:'OAE', message:`"${name}" cadastrada (Tipo: ${listTipos.find(t=>t.id===typeId)?.nome||typeId}).`, variant:'success'});
         modal.hide();
     };
 
     modal.show();
 }
+
+// Inicializa popovers (ícone de informação de "Lentidão por Nível")
+window.addEventListener('load', function(){
+    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function(el){
+        new bootstrap.Popover(el);
+    });
+});
+

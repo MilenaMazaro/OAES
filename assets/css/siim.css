@@ -414,3 +414,31 @@ html,body{ height:100%; } body{ overflow:hidden; background:#f6f7fb; }
 #panel-ind .col-count { width:90px;  text-align:center; }
 #panel-ind .col-acoes { width:170px; text-align:right; }
 
+
+/* Popover dos níveis de lentidão */
+.traffic-popover {
+    --bs-popover-max-width: 320px;
+}
+.traffic-popover .popover-body {
+    font-size: .9rem;
+    line-height: 1.25;
+}
+.cursor-help { cursor: help; }
+
+/* Pills coloridas para os níveis */
+.lvl-pill{
+    display:inline-block;
+    padding:.15rem .5rem;
+    border-radius:.5rem;       /* bordas arredondadas */
+    font-weight:700;
+    font-size:.9rem;
+    line-height:1;
+    color:#111;
+    margin-right:.35rem;
+}
+.lvl-leve{      background:#a5d6a7; }  /* verde */
+.lvl-moderado{  background:#ffe082; }  /* amarelo */
+.lvl-intenso{   background:#ffcc80; }  /* laranja */
+.lvl-mintenso{  background:#ef9a9a; }  /* vermelho */
+.lvl-extremo{   background:#ffab91; }  /* vinho/avermelhado */
+

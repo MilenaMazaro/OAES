@@ -47,12 +47,15 @@
                 <div class="small text-muted mb-2">Selecione uma ou mais OAEs para filtrar os alertas do Waze em um raio de 500m.</div>
 
                 <div class="mb-3">
-                    <div id="oae-ms" class="chips-control">
-                        <div id="oae-chips"></div>
-                        <input id="oae-input" class="chips-input" placeholder="Digite para buscar uma OAE..." list="oaes-list" autocomplete="off">
-                        <datalist id="oaes-list"></datalist>
+                    <label class="form-label">OAE</label>
+                    <div class="input-group">
+                        <input id="oae-input" class="form-control" placeholder="Digite para buscar uma OAE..." list="oaes-list" autocomplete="off">
+                        <button id="oae-clear" class="btn btn-outline-secondary" type="button">Limpar</button>
                     </div>
+                    <datalist id="oaes-list"></datalist>
+                    <div id="oae-picked" class="form-text text-muted mt-1">Nenhuma OAE selecionada.</div>
                 </div>
+
 
                 <div class="d-flex align-items-center justify-content-between mb-2">
                     <div class="d-flex align-items-center gap-2">
@@ -102,7 +105,46 @@
                         <div id="waze-updated" class="small">Atualizado: —</div>
                     </div>
                     <div class="card-body p-3">
-                        <div class="fw-semibold mb-2">Resumo do Trânsito</div>
+                        <div class="fw-semibold mb-2 d-flex align-items-center gap-2">
+                            Lentidão por Nível
+                            <i
+                                    class="bi bi-info-circle-fill text-secondary cursor-help"
+                                    role="button"
+                                    tabindex="0"
+                                    data-bs-toggle="popover"
+                                    data-bs-trigger="hover focus"
+                                    data-bs-placement="left"
+                                    data-bs-html="true"
+                                    data-bs-custom-class="traffic-popover"
+                                    data-bs-content="
+      <div class='text-start'>
+        <div class='mb-2 fw-bold'>Como ler os níveis:</div>
+        <div class='mb-1'>
+          <span class='lvl-pill lvl-leve'>Leve</span>
+          Pequeno atraso — <i>61% a 80%</i>. A velocidade média está um pouco abaixo do normal.
+        </div>
+        <div class='mb-1'>
+          <span class='lvl-pill lvl-moderado'>Moderado</span>
+          Tráfego moderado — <i>41% a 60%</i>. Lentidão significativa.
+        </div>
+        <div class='mb-1'>
+          <span class='lvl-pill lvl-intenso'>Intenso</span>
+          Trânsito pesado — <i>21% a 40%</i>. Congestionamento notável.
+        </div>
+        <div class='mb-1'>
+          <span class='lvl-pill lvl-mintenso'>Muito intenso</span>
+          Quase parado — <i>1% a 20%</i>. Veículos se movendo muito lentamente.
+        </div>
+        <div>
+          <span class='lvl-pill lvl-extremo'>Extremo</span>
+          Via bloqueada/interditada. Tráfego praticamente parado.
+        </div>
+      </div>
+    "
+                            ></i>
+                        </div>
+
+
                         <ul id="traffic-summary" class="list-group list-group-flush small"></ul>
                     </div>
                 </div>
