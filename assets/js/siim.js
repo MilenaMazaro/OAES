@@ -54,6 +54,7 @@ const OAE_AREA_STYLE = {
     fillOpacity: 0.18
 };
 
+
 /* === Lentidões (mock) === */
 const JAM_LVL_STYLE = {
     1: { color: '#a5d6a7', weight: 4 }, // leve
@@ -213,6 +214,19 @@ function buildCapsuleFromPath(path, radiusM){
     return polyPath;
 }
 
+// distância mínima (em metros) entre um ponto e um path (MVCArray)
+function pointDistanceToPath(latLng, path){
+    if(!latLng || !path || !path.getLength()) return Infinity;
+    let min = Infinity;
+    for(let i=0;i<path.getLength();i++){
+        const d = google.maps.geometry.spherical
+            .computeDistanceBetween(latLng, path.getAt(i));
+        if (d < min) min = d;
+    }
+    return min;
+}
+
+
 /* ===== OAEs (mapa) ===== */
 function fetchOAEs(){
     setStatus('Carregando OAEs...');
@@ -285,7 +299,7 @@ function resolveOaeName(p, idx){
 function renderOAEs(fc){
     if(!fc || !fc.features || !fc.features.length) return;
 
-    // lista de tipos presentes
+    // 1) Descobre os tipos presentes para montar o filtro
     var presentTypes = {};
     fc.features.forEach(function(f){
         var t = (f.properties && (f.properties.oae_type || f.properties.type)) || 'Sem tipo';
@@ -293,19 +307,24 @@ function renderOAEs(fc){
     });
     buildTypeFilter(Object.keys(presentTypes).sort());
 
+    // 2) Limpa estruturas
     oaeLayers = [];
     typePolylines = {};
-    let namesSeen = {}; // para garantir nome único
+    let namesSeen = {}; // garante nome único
 
+    // 3) Desenha cada OAE
     fc.features.forEach(function(f, idx){
         if(!f.geometry || f.geometry.type!=='LineString') return;
 
+        // coords
         var coords = f.geometry.coordinates.map(function(x){ return {lat:x[1], lng:x[0]}; });
+
+        // props
         const p = f.properties || {};
         var oaeName = resolveOaeName(p, idx);
         var oaeType = (p.oae_type || p.type) || 'Sem tipo';
 
-        // evita nomes repetidos acrescentando sufixo (#)
+        // evita nomes repetidos: Nome, Nome (#2), Nome (#3)...
         if (namesSeen[oaeName]) {
             namesSeen[oaeName] += 1;
             oaeName = `${oaeName} (#${namesSeen[oaeName]})`;
@@ -313,11 +332,13 @@ function renderOAEs(fc){
             namesSeen[oaeName] = 1;
         }
 
-        // path base invisível
+        // path base invisível (mantém o traçado "fino" original)
         var rawPl = new google.maps.Polyline({ path: coords, strokeOpacity:0, map:null });
+
+        // gera a cápsula (polígono arredondado) a partir do traçado
         var capsulePath = buildCapsuleFromPath(rawPl.getPath(), OAE_BUFFER_M);
 
-        // polígono roxo translúcido
+        // polígono roxo translúcido (estilo base)
         var pl = new google.maps.Polygon({
             paths: capsulePath,
             strokeColor: OAE_STYLE.strokeColor,
@@ -325,26 +346,31 @@ function renderOAEs(fc){
             strokeWeight: OAE_STYLE.strokeWeight,
             fillColor: OAE_STYLE.fillColor,
             fillOpacity: OAE_STYLE.fillOpacity,
-            zIndex:10,
-            map:(layersEnabled.oaes && typeState[oaeType]!==false) ? map : null
+            zIndex: 10,
+            map: (layersEnabled.oaes && typeState[oaeType]!==false) ? map : null
         });
 
-        pl.__id = polyIdSeq++;
-        pl.__oaeName = oaeName;   // <- agora sempre correto e único
+        // metadados da OAE
+        pl.__id      = polyIdSeq++;
+        pl.__oaeName = oaeName;
         pl.__oaeType = oaeType;
-        pl.__rawPath = rawPl.getPath();
+        pl.__rawPath = rawPl.getPath(); // guarda o traçado original
+        pl.__props   = p;               // guarda as propriedades originais (p/ popup)
 
-        if(!typePolylines[oaeType]) typePolylines[oaeType]=[];
+        // agrupa por tipo
+        if(!typePolylines[oaeType]) typePolylines[oaeType] = [];
         typePolylines[oaeType].push(pl);
         oaeLayers.push(pl);
 
-        pl.addListener('click', function(ev){
+        // clique: seleciona a OAE e abre o painel
+        // (o pop-up completo é aberto depois, quando as lentidões forem calculadas)
+        pl.addListener('click', function(){
             addOAEByPolyline(pl, true);
-            showOAEInfo(pl, ev?.latLng || pl.getPath().getAt(0));
             openPanel();
         });
     });
 
+    // 4) atualiza sugestões do campo de busca
     fillOaeSuggestions();
 }
 
@@ -352,13 +378,51 @@ function renderOAEs(fc){
 function getPolylinesByName(name){ return oaeLayers.filter(pl => pl.__oaeName === name); }
 function getPolylineById(id){ for (var i=0;i<oaeLayers.length;i++) if (oaeLayers[i].__id===id) return oaeLayers[i]; return null; }
 function showOAEInfo(pl, anchor){
-    var path = pl.__rawPath || pl.getPath();
-    var lenM = google.maps.geometry.spherical.computeLength(path);
-    var km = (lenM/1000).toFixed(2)+' km';
-    var html = '<div><b>'+pl.__oaeName+'</b><br><small>'+pl.__oaeType+' • '+km+'</small></div>';
-    var pos = anchor || path.getAt(Math.floor(path.getLength()/2));
-    info.setContent(html); info.setPosition(pos); info.open(map);
+    const path = pl.__rawPath || pl.getPath();
+    const lenM = path ? google.maps.geometry.spherical.computeLength(path) : 0;
+    const km   = (lenM/1000).toFixed(2) + ' km';
+
+    const st = pl.__jamStats || { total:0, byLevel:{1:0,2:0,3:0,4:0,5:0} };
+
+    const chip = (n,label,bg) => n
+        ? `<span style="display:inline-block;margin-right:.3rem;margin-bottom:.25rem;padding:.15rem .45rem;border-radius:.5rem;font-weight:700;font-size:.85rem;background:${bg};color:#111;">${label}: ${n}</span>`
+        : '';
+
+    const chips = [
+        chip(st.byLevel[1]||0,'Leve','#a5d6a7'),
+        chip(st.byLevel[2]||0,'Moderado','#ffe082'),
+        chip(st.byLevel[3]||0,'Intenso','#ffcc80'),
+        chip(st.byLevel[4]||0,'Muito Intenso','#ef9a9a'),
+        chip(st.byLevel[5]||0,'Extremo','#ffab91'),
+    ].join('');
+
+    const p = pl.__props || {};
+    const opt = (lab, keys) => {
+        const k = keys.find(k=>p[k]!=null && String(p[k]).trim()!=='');
+        return k ? `<div><span style="color:#6b7280">${lab}:</span> ${p[k]}</div>` : '';
+    };
+    const extra =
+        opt('Bairro',['bairro']) +
+        opt('Distrito',['distrito','district']) +
+        opt('Subprefeitura',['subprefeitura','subpref']) +
+        opt('Logradouro',['street','logradouro']) +
+        opt('Sentido',['sentido']) +
+        opt('Extensão',['extensao','length']);
+
+    const html = `
+    <div style="max-width:280px">
+      <div style="font-weight:700;font-size:1rem;margin-bottom:.15rem">${pl.__oaeName}</div>
+      <div style="color:#6b7280;font-size:.9rem;margin-bottom:.35rem">${pl.__oaeType} • ${km}</div>
+      <div style="margin:.35rem 0 .25rem;font-weight:600">Lentidões próximas (≤ 600 m)</div>
+      ${st.total ? `<div style="margin-bottom:.35rem">${chips}</div>` : `<div class="text-muted" style="font-size:.9rem">Nenhuma no momento</div>`}
+      ${extra ? `<div style="margin-top:.35rem;font-size:.9rem">${extra}</div>` : ''}
+    </div>
+  `;
+
+    const pos = anchor || (path ? path.getAt(Math.floor(path.getLength()/2)) : null);
+    if (pos){ info.setContent(html); info.setPosition(pos); info.open(map); }
 }
+
 
 /* ===== Tipos (filtro) ===== */
 function buildTypeFilter(types){
@@ -470,11 +534,15 @@ function addOAEByPolyline(pl, zoom){
     selectedOAEIds = [pl.__id];
 
     if (typeState[pl.__oaeType] === false) {
-        typeState[pl.__oaeType] = true; updateOAEsVisibility();
-        var id = 't_' + btoa(pl.__oaeType).replace(/=/g,''); var cb = document.getElementById(id); if (cb) cb.checked = true;
+        typeState[pl.__oaeType] = true;
+        updateOAEsVisibility();
+        var id = 't_' + btoa(pl.__oaeType).replace(/=/g,'');
+        var cb = document.getElementById(id);
+        if (cb) cb.checked = true;
     }
 
-    var input = document.getElementById('oae-input'); if (input) input.value = pl.__oaeName || '';
+    var input = document.getElementById('oae-input');
+    if (input) input.value = pl.__oaeName || '';
 
     setSelectedStyle(pl, true);
     drawAreaForPolyline(pl, 500);
@@ -483,14 +551,23 @@ function addOAEByPolyline(pl, zoom){
     var picked = document.getElementById('oae-picked');
     if (picked) picked.textContent = 'Selecionada: ' + (pl.__oaeName||'');
 
+    // Mostra imediatamente (sem stats ainda)
+    showOAEInfo(pl);
+
+    // alertas pontuais
     if (typeof fetchAlertsForSelected === 'function') fetchAlertsForSelected();
+
+    // depois calcula lentidões e atualiza o pop-up
     if (typeof renderJamsNearSelected === 'function'){
-        renderJamsNearSelected(600).then(cnt=>{
-            const st = document.getElementById('status');
-            if (st) st.textContent = (st.textContent||'') + ` • Lentidões: ${cnt}`;
-        });
+        renderJamsNearSelected(600).then(stats=>{
+            pl.__jamStats = stats; // { total, byLevel:{1..5} }
+            setStatus(`OAE selecionada. Lentidões: ${stats.total} (N1:${stats.byLevel[1]} N2:${stats.byLevel[2]} N3:${stats.byLevel[3]} N4:${stats.byLevel[4]} N5:${stats.byLevel[5]})`);
+            showOAEInfo(pl); // reabre/atualiza o conteúdo com os chips
+        }).catch(()=>{/* mantém o popup básico */});
     }
 }
+
+
 
 function removeOAEById(id){
     selectedOAEIds = selectedOAEIds.filter(x=>x!==id);
@@ -1004,53 +1081,113 @@ window.addEventListener('load', function(){
     if (box) box.classList.remove('d-none');
 });
 
+// Lê o arquivo local de alertas e devolve um FeatureCollection só de Points
 function loadLocalAlertsFC(){
     if (__alertsFC) return Promise.resolve(__alertsFC);
+
     return fetch(DATA_ALERTS).then(r=>r.json()).then(json=>{
         const features = [];
+
+        // Caso 1: já venha um FeatureCollection e tenha Points
         if (json && json.type && /featurecollection/i.test(json.type) && Array.isArray(json.features)) {
-            json.features.forEach(f=>{ if (f && f.geometry && f.geometry.type === 'Point') features.push(f); });
+            json.features.forEach(f=>{
+                if (f && f.geometry && f.geometry.type === 'Point') {
+                    features.push(f);
+                }
+            });
         }
+
+        // Caso 2: formato "alerts" no arquivo { alerts:[ {point:{geometry:Point}, ...} ] }
         if (Array.isArray(json.alerts)) {
             json.alerts.forEach(a=>{
-                if (a.point && a.point.geometry && a.point.geometry.type==='Point') {
+                const g = a.point?.geometry;
+                if (g && g.type === 'Point') {
                     features.push({
                         type:'Feature',
                         properties:{
-                            name:a.name || (a.point.properties && a.point.properties.name) || '',
-                            type:a.type || null,
-                            alert_type:a.alert_type || null,
-                            street:a.street || null,
-                            date:a.date || null,
-                            hour:a.hour || null
+                            name: a.name || a.point?.properties?.name || '',
+                            type: a.type || null,
+                            alert_type: a.alert_type || null,
+                            street: a.street || null,
+                            date: a.date || null,
+                            hour: a.hour || null,
+                            oae_name: a.oae_name || a.point?.properties?.oae_name || a.oae || a.point?.properties?.oae || ''
                         },
-                        geometry:a.point.geometry
+                        geometry: g
                     });
                 }
             });
         }
+
+        // Caso 3: alguns "jams" vêm com ponto além de linha — aproveita os Points como marcadores
         if (Array.isArray(json.jams)) {
-            json.jams.forEach(a=>{
-                if (a.point && a.point.geometry && a.point.geometry.type==='Point') {
+            json.jams.forEach(j=>{
+                const g = j.point?.geometry;
+                if (g && g.type === 'Point') {
                     features.push({
                         type:'Feature',
                         properties:{
-                            name:a.name || (a.point.properties && a.point.properties.name) || '',
-                            type:a.type || null,
+                            name: j.name || j.point?.properties?.name || '',
+                            type: j.type || null,
                             alert_type:'JAM',
-                            street:a.street || null,
-                            date:a.date || null,
-                            hour:a.hour || null
+                            street: j.street || null,
+                            date: j.date || null,
+                            hour: j.hour || null,
+                            oae_name: j.oae_name || j.point?.properties?.oae_name || j.oae || j.point?.properties?.oae || ''
                         },
-                        geometry:a.point.geometry
+                        geometry: g
                     });
                 }
             });
         }
+
         __alertsFC = { type:'FeatureCollection', features };
         return __alertsFC;
     });
 }
+
+function loadLocalJams(){
+    if (__allJams) return Promise.resolve(__allJams);
+
+    return fetch(DATA_ALERTS).then(r=>r.json()).then(json=>{
+        const arr = [];
+
+        // formato listado em "jams": com geometry ou line
+        (json.jams||[]).forEach(j=>{
+            const geom = j.line || j.geometry || j.point?.geometry || j.feature?.geometry;
+            const lvl  = j.level || j.nivel || j.severity || (j.properties?.level) || 3;
+            if (!geom) return;
+
+            if (geom.type === 'LineString'){
+                arr.push({ level:lvl, street:j.street||j.rua, speed:j.speed||null, feature:{ geometry: geom }});
+            } else if (geom.type === 'MultiLineString'){
+                (geom.coordinates||[]).forEach(cs=>{
+                    arr.push({ level:lvl, street:j.street||j.rua, speed:j.speed||null,
+                        feature:{ geometry:{ type:'LineString', coordinates: cs } }});
+                });
+            }
+        });
+
+        // também aceita um GeoJSON com features de linhas
+        if (json.type && /featurecollection/i.test(json.type)){
+            (json.features||[]).forEach(f=>{
+                const lvl = f.properties?.level || f.properties?.nivel || f.properties?.severity || 3;
+                if (f.geometry?.type === 'LineString'){
+                    arr.push({ level:lvl, street:f.properties?.street, speed:f.properties?.speed, feature:f });
+                } else if (f.geometry?.type === 'MultiLineString'){
+                    (f.geometry.coordinates||[]).forEach(cs=>{
+                        arr.push({ level:lvl, street:f.properties?.street, speed:f.properties?.speed,
+                            feature:{ type:'Feature', properties:f.properties||{}, geometry:{ type:'LineString', coordinates: cs } }});
+                    });
+                }
+            });
+        }
+
+        __allJams = arr;
+        return arr;
+    }).catch(()=>[]);
+}
+
 function _catKey(t){
     if(!t) return 'JAM';
     t = String(t).toUpperCase();
@@ -1139,20 +1276,40 @@ function updateAlertsVisibility(){
     }
 }
 function fetchAlertsForSelected(){
-    if(!selectedOAEIds.length){ _resetMarkers(); updateAlertsVisibility(); return Promise.resolve(0); }
+    if(!selectedOAEIds.length){
+        _resetMarkers(); updateAlertsVisibility();
+        return Promise.resolve(0);
+    }
 
-    const namesSet = {};
-    selectedOAEIds.forEach(id=>{
-        const pl = getPolylineById(id);
-        if (pl && pl.__oaeName) namesSet[pl.__oaeName] = true;
-    });
-    const names = Object.keys(namesSet);
+    const basePl  = getPolylineById(selectedOAEIds[0]);
+    const oaePath = basePl?.__rawPath || basePl?.getPath();
+    if (!oaePath){
+        _resetMarkers(); updateAlertsVisibility();
+        return Promise.resolve(0);
+    }
+
+    // nome da OAE selecionada (para tentativa de match por nome)
+    const oaeName = (basePl.__oaeName||'').trim().toLowerCase();
 
     return loadLocalAlertsFC().then(fc=>{
-        const feats = fc.features.filter(f=>{
-            const n = (f.properties && (f.properties.oae_name || f.properties.name || '')) || '';
-            return names.some(x => x.toLowerCase().trim() === n.toLowerCase().trim());
+        // 1) tenta por nome quando existir
+        let feats = fc.features.filter(f=>{
+            const p = f.properties||{};
+            const n = (p.oae_name || p.name || '').trim().toLowerCase();
+            return n && oaeName && n === oaeName;
         });
+
+        // 2) fallback por proximidade (≤ 500 m) se nada bateu por nome
+        if (!feats.length){
+            feats = fc.features.filter(f=>{
+                if(!f.geometry || f.geometry.type!=='Point') return false;
+                const [lng,lat] = f.geometry.coordinates;
+                const pt = new google.maps.LatLng(lat,lng);
+                const dist = pointDistanceToPath(pt, oaePath);
+                return dist <= 500; // mesmo raio do seu retângulo
+            });
+        }
+
         const count = _renderAlerts({type:'FeatureCollection', features:feats});
         setStatus('OAEs selecionadas: '+selectedOAEIds.length+' • Alertas: '+count);
         updateWazeUpdated();
@@ -1164,15 +1321,8 @@ function fetchAlertsForSelected(){
     });
 }
 
+
 /* ===== Lentidões (mock) próximas da OAE ===== */
-function loadLocalJams(){
-    if (__allJams) return Promise.resolve(__allJams);
-    return fetch(DATA_ALERTS).then(r=>r.json()).then(json=>{
-        const jams = Array.isArray(json?.jams) ? json.jams.filter(j => j?.feature?.geometry?.type === 'LineString') : [];
-        __allJams = jams;
-        return jams;
-    });
-}
 function clearJamLines(){
     (__jamPolylines||[]).forEach(pl=>pl.setMap(null));
     __jamPolylines = [];
@@ -1191,21 +1341,31 @@ function polylineDistanceToPath(jamLatLngs, oaePath){
 }
 function renderJamsNearSelected(radiusM = 600){
     clearJamLines();
-    if (!selectedOAEIds.length) return Promise.resolve(0);
+    if (!selectedOAEIds.length) {
+        return Promise.resolve({ total:0, byLevel:{1:0,2:0,3:0,4:0,5:0} });
+    }
 
-    const basePl = getPolylineById(selectedOAEIds[0]);
+    const basePl  = getPolylineById(selectedOAEIds[0]);
     const oaePath = basePl?.__rawPath || basePl?.getPath();
-    if (!oaePath) return Promise.resolve(0);
+    if (!oaePath) {
+        return Promise.resolve({ total:0, byLevel:{1:0,2:0,3:0,4:0,5:0} });
+    }
 
     return loadLocalJams().then(jams=>{
-        const visible = [];
+        const stats = { total:0, byLevel:{1:0,2:0,3:0,4:0,5:0} };
+
         jams.forEach(j=>{
-            const coords = (j.feature.geometry.coordinates || []).map(x => ({lat:x[1], lng:x[0]}));
+            const coords = (j.feature?.geometry?.coordinates || []).map(x => ({lat:x[1], lng:x[0]}));
             if (coords.length < 2) return;
+
             const latlngs = coords.map(c=>new google.maps.LatLng(c.lat,c.lng));
             const dist = polylineDistanceToPath(latlngs, oaePath);
             if (dist <= radiusM){
-                const sty = JAM_LVL_STYLE[j.level] || JAM_LVL_STYLE[3];
+                const lvl = Number(j.level || j.nivel || j.severity || 3);
+                stats.total += 1;
+                if (stats.byLevel[lvl] != null) stats.byLevel[lvl] += 1;
+
+                const sty = JAM_LVL_STYLE[lvl] || JAM_LVL_STYLE[3];
                 const pl = new google.maps.Polyline({
                     path: coords,
                     strokeColor: sty.color,
@@ -1215,18 +1375,19 @@ function renderJamsNearSelected(radiusM = 600){
                     map: layersEnabled.alerts ? map : null
                 });
                 pl.addListener('click', (ev)=>{
-                    const html = `<div><b>Lentidão (nível ${j.level})</b><br><small>${j.street||''}${j.speed?` • ${j.speed} km/h`:''}</small></div>`;
+                    const html = `<div><b>Lentidão (nível ${lvl})</b><br><small>${j.street||''}${j.speed?` • ${j.speed} km/h`:''}</small></div>`;
                     info.setContent(html);
                     info.setPosition(ev.latLng);
                     info.open(map);
                 });
                 __jamPolylines.push(pl);
-                visible.push(pl);
             }
         });
-        return visible.length;
+
+        return stats;
     });
 }
+
 
 /* ===== Cadastrar OAE (modal) ===== */
 function openNewOaeModal(){
