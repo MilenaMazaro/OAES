@@ -25,6 +25,46 @@ var TYPE_COLORS = {
     "Pontilhão":"#00acc1","Complexo Viário":"#43a047","Sem tipo":"#1976d2"
 };
 
+/* === Estilo das OAEs (cápsula roxa translúcida) === */
+const OAE_STYLE = {
+    fillColor: '#B388FF',
+    fillOpacity: 0.25,
+    strokeColor: '#6A1B9A',
+    strokeOpacity: 0.5,
+    strokeWeight: 2
+};
+// largura visual da faixa da OAE (em metros)
+const OAE_BUFFER_M = 16;
+
+// === Estilo QUANDO SELECIONADA (amarelo pastel)
+const OAE_SELECTED_STYLE = {
+    fillColor: '#f6e122',   // amarelo pastel
+    fillOpacity: 0.35,      // clarinho e visível
+    strokeColor: '#FBC02D', // contorno amarelo mais forte
+    strokeOpacity: 0.95,
+    strokeWeight: OAE_STYLE.strokeWeight + 1
+};
+
+// === Estilo da área/retângulo de 500m (vermelho translúcido)
+const OAE_AREA_STYLE = {
+    strokeColor: '#d32f2f',
+    strokeOpacity: 0.9,
+    strokeWeight: 2,
+    fillColor: '#ff5252',
+    fillOpacity: 0.18
+};
+
+/* === Lentidões (mock) === */
+const JAM_LVL_STYLE = {
+    1: { color: '#a5d6a7', weight: 4 }, // leve
+    2: { color: '#ffe082', weight: 5 }, // moderado
+    3: { color: '#ffcc80', weight: 6 }, // intenso
+    4: { color: '#ef9a9a', weight: 7 }, // muito intenso
+    5: { color: '#ffab91', weight: 8 }  // extremo
+};
+let __jamPolylines = [];
+let __allJams = null;
+
 function setStatus(t){ var el=document.getElementById('status'); if(el) el.textContent = t||''; }
 function openPanel(){ document.getElementById('right-shell').classList.add('open'); }
 function togglePanel(){ document.getElementById('right-shell').classList.toggle('open'); }
@@ -80,6 +120,7 @@ function initMap(){
         layersEnabled.alerts = btn.classList.contains('active');
         btn.setAttribute('data-on', layersEnabled.alerts?'1':'0');
         updateAlertsVisibility();
+        (__jamPolylines||[]).forEach(pl=> pl.setMap(layersEnabled.alerts?map:null)); // jams seguem o mesmo toggle
     };
 
     document.getElementById('btn-toggle').onclick = togglePanel;
@@ -135,6 +176,43 @@ document.addEventListener('keydown', function(e){
     if(e.key.toLowerCase() === 'n'){ e.preventDefault(); document.getElementById('btn-new-type')?.click(); }
 });
 
+/* ===== Helpers de geometria OAEs ===== */
+// Gera um polígono estilo “cápsula” em volta de um path, com cantos arredondados.
+function buildCapsuleFromPath(path, radiusM){
+    if (!path || path.getLength() < 2) return null;
+
+    const left = [], right = [];
+    for (let i = 0; i < path.getLength() - 1; i++){
+        const a = path.getAt(i), b = path.getAt(i+1);
+        const heading = google.maps.geometry.spherical.computeHeading(a, b);
+        const leftA  = google.maps.geometry.spherical.computeOffset(a,  radiusM, heading - 90);
+        const leftB  = google.maps.geometry.spherical.computeOffset(b,  radiusM, heading - 90);
+        const rightA = google.maps.geometry.spherical.computeOffset(a,  radiusM, heading + 90);
+        const rightB = google.maps.geometry.spherical.computeOffset(b,  radiusM, heading + 90);
+        if (i === 0){ left.push(leftA); right.push(rightA); }
+        left.push(leftB); right.push(rightB);
+    }
+
+    const steps = 10;
+    const start = path.getAt(0), end = path.getAt(path.getLength()-1);
+    const hHead = google.maps.geometry.spherical.computeHeading(start, path.getAt(1));
+    const hTail = google.maps.geometry.spherical.computeHeading(path.getAt(path.getLength()-2), end);
+
+    const capStart = [];
+    for (let t = 0; t <= steps; t++){
+        const ang = (hHead + 90) + (t/steps)*180;
+        capStart.push(google.maps.geometry.spherical.computeOffset(start, radiusM, ang));
+    }
+    const capEnd = [];
+    for (let t = 0; t <= steps; t++){
+        const ang = (hTail - 90) + (t/steps)*180;
+        capEnd.push(google.maps.geometry.spherical.computeOffset(end, radiusM, ang));
+    }
+
+    const polyPath = [].concat(left, capEnd, right.reverse(), capStart);
+    return polyPath;
+}
+
 /* ===== OAEs (mapa) ===== */
 function fetchOAEs(){
     setStatus('Carregando OAEs...');
@@ -143,25 +221,71 @@ function fetchOAEs(){
         setStatus('OAEs carregadas: '+oaeLayers.length+'. Use o campo acima para selecionar.');
     }).catch(function(e){ console.error(e); setStatus('Falha ao carregar OAEs (veja o console).'); });
 }
+
 function setSelectedStyle(pl, isSelected){
     if (!pl) return;
+
     if (isSelected){
+        // guarda estilo atual uma única vez
+        if (!pl.__prevStyle){
+            pl.__prevStyle = {
+                fillColor: pl.get('fillColor'),
+                fillOpacity: pl.get('fillOpacity'),
+                strokeColor: pl.get('strokeColor'),
+                strokeOpacity: pl.get('strokeOpacity'),
+                strokeWeight: pl.get('strokeWeight')
+            };
+        }
+        // aplica estilo selecionado (amarelo pastel)
+        pl.setOptions({
+            fillColor: OAE_SELECTED_STYLE.fillColor,
+            fillOpacity: OAE_SELECTED_STYLE.fillOpacity,
+            strokeColor: OAE_SELECTED_STYLE.strokeColor,
+            strokeOpacity: OAE_SELECTED_STYLE.strokeOpacity,
+            strokeWeight: OAE_SELECTED_STYLE.strokeWeight,
+            zIndex: (pl.get('zIndex')||0)+3
+        });
+
+        // outline extra (sombra/borda externa)
         if (!pl.__outline){
-            pl.__outline = new google.maps.Polyline({
-                path: pl.getPath(), strokeColor:'#000', strokeOpacity:1.0,
-                strokeWeight:(pl.get('strokeWeight')||4)+3, zIndex:(pl.get('zIndex')||0)
+            pl.__outline = new google.maps.Polygon({
+                paths: pl.getPath(),
+                strokeColor:'#2E0E54',
+                strokeOpacity:1,
+                strokeWeight:(OAE_STYLE.strokeWeight||2)+2,
+                fillOpacity:0,
+                zIndex:(pl.get('zIndex')||0)+4
             });
         }
         if (layersEnabled.oaes && typeState[pl.__oaeType]) pl.__outline.setMap(map);
-        pl.setOptions({ zIndex:(pl.get('zIndex')||0)+1 });
+
     } else {
+        // restaura o roxo padrão
+        if (pl.__prevStyle){
+            pl.setOptions({...pl.__prevStyle, zIndex:10});
+            pl.__prevStyle = null;
+        } else {
+            pl.setOptions({ zIndex:10 });
+        }
         if (pl.__outline) pl.__outline.setMap(null);
-        pl.setOptions({ zIndex:null });
     }
 }
+// === Helper: resolve nome da OAE
+function resolveOaeName(p, idx){
+    if (!p) p = {};
+    const cand =
+        p.oae_name || p.nome || p.title || p.street || p.logradouro ||
+        ((p.name && !/^oae$/i.test(p.name)) ? p.name : null);
+
+    const id = p.id || p.oae_id || p.codigo || (idx+1);
+    return cand || `OAE ${id}`;
+}
+
+
 function renderOAEs(fc){
     if(!fc || !fc.features || !fc.features.length) return;
 
+    // lista de tipos presentes
     var presentTypes = {};
     fc.features.forEach(function(f){
         var t = (f.properties && (f.properties.oae_type || f.properties.type)) || 'Sem tipo';
@@ -170,42 +294,69 @@ function renderOAEs(fc){
     buildTypeFilter(Object.keys(presentTypes).sort());
 
     oaeLayers = [];
-    fc.features.forEach(function(f){
-        if(!f.geometry || f.geometry.type!=='LineString') return;
-        var coords = f.geometry.coordinates.map(function(x){ return {lat:x[1], lng:x[0]}; });
-        var oaeName = (f.properties && (f.properties.oae_name || f.properties.name || f.properties.street)) || 'OAE';
-        var oaeType = (f.properties && (f.properties.oae_type || f.properties.type)) || 'Sem tipo';
-        var color   = TYPE_COLORS[oaeType] || '#1976d2';
+    typePolylines = {};
+    let namesSeen = {}; // para garantir nome único
 
-        var pl = new google.maps.Polyline({
-            path:coords, strokeColor:color, strokeWeight:4, strokeOpacity:.9,
+    fc.features.forEach(function(f, idx){
+        if(!f.geometry || f.geometry.type!=='LineString') return;
+
+        var coords = f.geometry.coordinates.map(function(x){ return {lat:x[1], lng:x[0]}; });
+        const p = f.properties || {};
+        var oaeName = resolveOaeName(p, idx);
+        var oaeType = (p.oae_type || p.type) || 'Sem tipo';
+
+        // evita nomes repetidos acrescentando sufixo (#)
+        if (namesSeen[oaeName]) {
+            namesSeen[oaeName] += 1;
+            oaeName = `${oaeName} (#${namesSeen[oaeName]})`;
+        } else {
+            namesSeen[oaeName] = 1;
+        }
+
+        // path base invisível
+        var rawPl = new google.maps.Polyline({ path: coords, strokeOpacity:0, map:null });
+        var capsulePath = buildCapsuleFromPath(rawPl.getPath(), OAE_BUFFER_M);
+
+        // polígono roxo translúcido
+        var pl = new google.maps.Polygon({
+            paths: capsulePath,
+            strokeColor: OAE_STYLE.strokeColor,
+            strokeOpacity: OAE_STYLE.strokeOpacity,
+            strokeWeight: OAE_STYLE.strokeWeight,
+            fillColor: OAE_STYLE.fillColor,
+            fillOpacity: OAE_STYLE.fillOpacity,
+            zIndex:10,
             map:(layersEnabled.oaes && typeState[oaeType]!==false) ? map : null
         });
+
         pl.__id = polyIdSeq++;
-        pl.__oaeName = oaeName;
+        pl.__oaeName = oaeName;   // <- agora sempre correto e único
         pl.__oaeType = oaeType;
+        pl.__rawPath = rawPl.getPath();
 
         if(!typePolylines[oaeType]) typePolylines[oaeType]=[];
         typePolylines[oaeType].push(pl);
         oaeLayers.push(pl);
 
         pl.addListener('click', function(ev){
-            if (!google.maps.geometry.poly.isLocationOnEdge(ev.latLng, pl, CLICK_TOLERANCE_M)) return;
             addOAEByPolyline(pl, true);
-            showOAEInfo(pl, ev.latLng);
+            showOAEInfo(pl, ev?.latLng || pl.getPath().getAt(0));
             openPanel();
         });
     });
 
     fillOaeSuggestions();
 }
+
+
 function getPolylinesByName(name){ return oaeLayers.filter(pl => pl.__oaeName === name); }
 function getPolylineById(id){ for (var i=0;i<oaeLayers.length;i++) if (oaeLayers[i].__id===id) return oaeLayers[i]; return null; }
 function showOAEInfo(pl, anchor){
-    var lenM = google.maps.geometry.spherical.computeLength(pl.getPath());
+    var path = pl.__rawPath || pl.getPath();
+    var lenM = google.maps.geometry.spherical.computeLength(path);
     var km = (lenM/1000).toFixed(2)+' km';
     var html = '<div><b>'+pl.__oaeName+'</b><br><small>'+pl.__oaeType+' • '+km+'</small></div>';
-    var pos = anchor || pl.getPath().getAt(Math.floor(pl.getPath().getLength()/2));
+    var pos = anchor || path.getAt(Math.floor(path.getLength()/2));
     info.setContent(html); info.setPosition(pos); info.open(map);
 }
 
@@ -265,7 +416,6 @@ function fillOaeSuggestions(){
     dl.innerHTML='';
     allOaeNames.forEach(function(n){ var o=document.createElement('option'); o.value=n; dl.appendChild(o); });
 
-    // garante bind do botão limpar (se existir no HTML)
     var btnClear = document.getElementById('oae-clear');
     if (btnClear && !btnClear.__wired){ btnClear.__wired = true; btnClear.addEventListener('click', clearOaeFilter); }
 }
@@ -275,28 +425,44 @@ function tryAddOAE(value){
     if (!found){ setStatus('OAE não encontrada.'); return; }
     var pl = getPolylinesByName(found)[0];
     if (pl) addOAEByPolyline(pl, true);
-    // em vez de limpar, mantenha o nome escolhido no input
     var input = document.getElementById('oae-input'); if (input) input.value = found;
     setPanel('oae');
 }
 
 function drawAreaForPolyline(pl, meters){
     meters = meters || 500;
-    var path = pl.getPath(); if(!path || path.getLength()===0) return;
-    var b=new google.maps.LatLngBounds();
-    for (var i=0;i<path.getLength();i++) b.extend(path.getAt(i));
-    var c=b.getCenter();
-    var n=google.maps.geometry.spherical.computeOffset(c,meters,0);
-    var s=google.maps.geometry.spherical.computeOffset(c,meters,180);
-    var e=google.maps.geometry.spherical.computeOffset(c,meters,90);
-    var w=google.maps.geometry.spherical.computeOffset(c,meters,270);
-    if (oaeAreaRectsById[pl.__id]) oaeAreaRectsById[pl.__id].setMap(null);
+
+    // usa o path “cru” se existir (criei isso nas OAEs em cápsula)
+    var path = pl.__rawPath || pl.getPath();
+    if(!path || path.getLength()===0) return;
+
+    // calcula o bounding box centrado e depois expande 500 m em cada direção
+    var b = new google.maps.LatLngBounds();
+    for (var i=0; i<path.getLength(); i++) b.extend(path.getAt(i));
+    var c = b.getCenter();
+    var n = google.maps.geometry.spherical.computeOffset(c, meters,   0);
+    var s = google.maps.geometry.spherical.computeOffset(c, meters, 180);
+    var e = google.maps.geometry.spherical.computeOffset(c, meters,  90);
+    var w = google.maps.geometry.spherical.computeOffset(c, meters, 270);
+
+    // remove retângulo antigo (se houver)
+    if (oaeAreaRectsById[pl.__id]) {
+        oaeAreaRectsById[pl.__id].setMap(null);
+    }
+
+    // retângulo VERMELHO translúcido (como no seu mock)
     oaeAreaRectsById[pl.__id] = new google.maps.Rectangle({
-        bounds:{ north:n.lat(), south:s.lat(), east:e.lng(), west:w.lng() },
-        strokeColor:'#e53935', strokeOpacity:.85, strokeWeight:2,
-        fillColor:'#e53935', fillOpacity:.18, map:map
+        bounds: { north:n.lat(), south:s.lat(), east:e.lng(), west:w.lng() },
+        strokeColor: '#d32f2f',   // contorno vermelho
+        strokeOpacity: 0.9,
+        strokeWeight: 2,
+        fillColor: '#ff5252',     // vermelho claro
+        fillOpacity: 0.18,        // translúcido
+        map: map,
+        zIndex: 5
     });
 }
+
 function addOAEByPolyline(pl, zoom){
     if (selectedOAEIds.length && selectedOAEIds[0] === pl.__id) return;
     if (selectedOAEIds.length) removeOAEById(selectedOAEIds[0]);
@@ -308,7 +474,6 @@ function addOAEByPolyline(pl, zoom){
         var id = 't_' + btoa(pl.__oaeType).replace(/=/g,''); var cb = document.getElementById(id); if (cb) cb.checked = true;
     }
 
-
     var input = document.getElementById('oae-input'); if (input) input.value = pl.__oaeName || '';
 
     setSelectedStyle(pl, true);
@@ -319,6 +484,12 @@ function addOAEByPolyline(pl, zoom){
     if (picked) picked.textContent = 'Selecionada: ' + (pl.__oaeName||'');
 
     if (typeof fetchAlertsForSelected === 'function') fetchAlertsForSelected();
+    if (typeof renderJamsNearSelected === 'function'){
+        renderJamsNearSelected(600).then(cnt=>{
+            const st = document.getElementById('status');
+            if (st) st.textContent = (st.textContent||'') + ` • Lentidões: ${cnt}`;
+        });
+    }
 }
 
 function removeOAEById(id){
@@ -333,7 +504,7 @@ function fitToSelectedOAEs(opts){
     var b = new google.maps.LatLngBounds(), any = false;
     selectedOAEIds.forEach(function(id){
         var pl = getPolylineById(id); if (!pl) return;
-        var path = pl.getPath();
+        var path = pl.__rawPath || pl.getPath();
         for (var i=0; i<path.getLength(); i++) { b.extend(path.getAt(i)); any = true; }
         setSelectedStyle(pl, true);
     });
@@ -352,8 +523,8 @@ function clearOaeFilter(){
     selectedOAEIds = [];
     var input = document.getElementById('oae-input'); if (input) input.value='';
     setStatus('Seleção limpa. Escolha uma OAE.');
-    // limpa alertas no mapa
     _resetMarkers(); updateAlertsVisibility();
+    clearJamLines();
 }
 
 /* ===== Util ===== */
@@ -737,7 +908,7 @@ function openRuleModal(id){
     document.getElementById('rule-ch-email').checked = !!(r.canais?.email);
     document.getElementById('rule-ch-sms').checked   = !!(r.canais?.sms);
 
-    // escopo por OAE (chips só dentro do modal de regra — permanece)
+    // escopo por OAE (chips)
     const chips = document.getElementById('rule-oae-chips'); chips.innerHTML='';
     function addChip(name){
         const sp=document.createElement('span'); sp.className='chip';
@@ -993,6 +1164,70 @@ function fetchAlertsForSelected(){
     });
 }
 
+/* ===== Lentidões (mock) próximas da OAE ===== */
+function loadLocalJams(){
+    if (__allJams) return Promise.resolve(__allJams);
+    return fetch(DATA_ALERTS).then(r=>r.json()).then(json=>{
+        const jams = Array.isArray(json?.jams) ? json.jams.filter(j => j?.feature?.geometry?.type === 'LineString') : [];
+        __allJams = jams;
+        return jams;
+    });
+}
+function clearJamLines(){
+    (__jamPolylines||[]).forEach(pl=>pl.setMap(null));
+    __jamPolylines = [];
+}
+function polylineDistanceToPath(jamLatLngs, oaePath){
+    let min = Infinity;
+    for (let i=0;i<jamLatLngs.length;i++){
+        const p = jamLatLngs[i];
+        for (let k=0;k<oaePath.getLength();k++){
+            const q = oaePath.getAt(k);
+            const d = google.maps.geometry.spherical.computeDistanceBetween(p, q);
+            if (d < min) min = d;
+        }
+    }
+    return min;
+}
+function renderJamsNearSelected(radiusM = 600){
+    clearJamLines();
+    if (!selectedOAEIds.length) return Promise.resolve(0);
+
+    const basePl = getPolylineById(selectedOAEIds[0]);
+    const oaePath = basePl?.__rawPath || basePl?.getPath();
+    if (!oaePath) return Promise.resolve(0);
+
+    return loadLocalJams().then(jams=>{
+        const visible = [];
+        jams.forEach(j=>{
+            const coords = (j.feature.geometry.coordinates || []).map(x => ({lat:x[1], lng:x[0]}));
+            if (coords.length < 2) return;
+            const latlngs = coords.map(c=>new google.maps.LatLng(c.lat,c.lng));
+            const dist = polylineDistanceToPath(latlngs, oaePath);
+            if (dist <= radiusM){
+                const sty = JAM_LVL_STYLE[j.level] || JAM_LVL_STYLE[3];
+                const pl = new google.maps.Polyline({
+                    path: coords,
+                    strokeColor: sty.color,
+                    strokeOpacity: 1,
+                    strokeWeight: sty.weight,
+                    zIndex: 50,
+                    map: layersEnabled.alerts ? map : null
+                });
+                pl.addListener('click', (ev)=>{
+                    const html = `<div><b>Lentidão (nível ${j.level})</b><br><small>${j.street||''}${j.speed?` • ${j.speed} km/h`:''}</small></div>`;
+                    info.setContent(html);
+                    info.setPosition(ev.latLng);
+                    info.open(map);
+                });
+                __jamPolylines.push(pl);
+                visible.push(pl);
+            }
+        });
+        return visible.length;
+    });
+}
+
 /* ===== Cadastrar OAE (modal) ===== */
 function openNewOaeModal(){
     const modalEl = document.getElementById('modalNewOAE');
@@ -1040,4 +1275,3 @@ window.addEventListener('load', function(){
         new bootstrap.Popover(el);
     });
 });
-
