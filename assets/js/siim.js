@@ -230,10 +230,26 @@ function pointDistanceToPath(latLng, path){
 /* ===== OAEs (mapa) ===== */
 function fetchOAEs(){
     setStatus('Carregando OAEs...');
-    fetch('api/oaes.php?mock=1').then(r=>r.json()).then(function(fc){
-        renderOAEs(fc);
-        setStatus('OAEs carregadas: '+oaeLayers.length+'. Use o campo acima para selecionar.');
-    }).catch(function(e){ console.error(e); setStatus('Falha ao carregar OAEs (veja o console).'); });
+    const tryUrls = [
+        '/api/oaes.php?mock=1',           // se existir em dev
+        '/data/oaes-sp-poc.json',         // 1ª opção sua
+        '/data/siurb_oae_poligonos.json'  // fallback (também é GeoJSON de linhas)
+    ];
+
+    (function next(i){
+        if (i >= tryUrls.length){
+            setStatus('Falha ao carregar OAEs (veja o console).');
+            return;
+        }
+        fetch(tryUrls[i])
+            .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+            .then(fc => {
+                if (!fc || !Array.isArray(fc.features) || !fc.features.length) throw new Error('sem features');
+                renderOAEs(fc);
+                setStatus('OAEs carregadas: '+oaeLayers.length+'. Use o campo acima para selecionar.');
+            })
+            .catch(() => next(i+1));
+    })(0);
 }
 
 function setSelectedStyle(pl, isSelected){
@@ -1074,7 +1090,7 @@ function simulateRule(id){
 window.addEventListener('load', initMap);
 
 /* ===== ALERTAS LOCAIS (PATCH) ===== */
-const DATA_ALERTS = 'data/obras-arte-alerts-jams.json';
+const DATA_ALERTS = '/data/obras-arte-alerts-jams.json';
 let __alertsFC = null;
 
 window.addEventListener('load', function(){
