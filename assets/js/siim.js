@@ -369,6 +369,7 @@ function renderOAEs(fc){
 
     // 4) atualiza sugestões
     fillOaeSuggestions();
+    fillRuleOaeDatalist();
 }
 
 
@@ -490,7 +491,37 @@ function fillOaeSuggestions(){
 
     var btnClear = document.getElementById('oae-clear');
     if (btnClear && !btnClear.__wired){ btnClear.__wired = true; btnClear.addEventListener('click', clearOaeFilter); }
+
 }
+
+function fillRuleOaeDatalist(){
+    const dl = document.getElementById('rule-oaes-datalist');
+    if (!dl) return;
+    dl.innerHTML = '';
+    (allOaeNames || []).forEach(n => {
+        const o = document.createElement('option');
+        o.value = n;
+        dl.appendChild(o);
+    });
+}
+
+function ensureRuleOaeDatalistReady(){
+    if (allOaeNames && allOaeNames.length){
+        fillRuleOaeDatalist();
+        return;
+    }
+    let tries = 0;
+    const t = setInterval(() => {
+        tries++;
+        if (allOaeNames && allOaeNames.length){
+            fillRuleOaeDatalist();
+            clearInterval(t);
+        } else if (tries > 50){ // ~10s
+            clearInterval(t);
+        }
+    }, 200);
+}
+
 function tryAddOAE(value){
     var name=(value||'').trim(); if(!name) return;
     var found = allOaeNames.find(n=>n.toLowerCase()===name.toLowerCase());
@@ -1004,6 +1035,7 @@ function openRuleModal(id){
     (r.escopo.oaeNames||[]).forEach(addChip);
 
     const inOae = document.getElementById('rule-oae-input');
+    ensureRuleOaeDatalistReady();
 
     // quando escolher uma opção do datalist (ou digitar e mudar), vira chip
     inOae.onchange = function(){

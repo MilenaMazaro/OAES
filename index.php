@@ -400,7 +400,7 @@
 <script src="https://maps.google.com/maps/api/js?v=beta&libraries=visualization,drawing,geometry,places&key=AIzaSyCd3zT_keK2xr7T6ujvR3TvLj5c9u0PtsM&callback=Function.prototype"></script>
 
 <!-- Seu JS (depois das libs) -->
-<script src="assets/js/siim.js?v=1"></script>
+<script src="assets/js/siim.js?v=5"></script>
 
 </body>
 </html>
