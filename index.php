@@ -56,7 +56,6 @@
                     <div id="oae-picked" class="form-text text-muted mt-1">Nenhuma OAE selecionada.</div>
                 </div>
 
-
                 <div class="d-flex align-items-center justify-content-between mb-2">
                     <div class="d-flex align-items-center gap-2">
                         <span class="text-muted">Tipos:</span>
@@ -143,7 +142,6 @@
     "
                             ></i>
                         </div>
-
 
                         <ul id="traffic-summary" class="list-group list-group-flush small"></ul>
                     </div>
@@ -317,7 +315,12 @@
                     <div class="tab-pane fade" id="escopo-oae">
                         <div class="mb-2">
                             <label class="form-label">OAEs</label>
-                            <input id="rule-oae-input" class="form-control" placeholder="Digite o nome da OAE e pressione Enter">
+                            <!-- Ajuste: datalist para sugestões -->
+                            <input id="rule-oae-input" class="form-control"
+                                   placeholder="Digite o nome da OAE e selecione"
+                                   list="rule-oaes-datalist" autocomplete="off">
+                            <datalist id="rule-oaes-datalist"></datalist>
+
                             <div id="rule-oae-chips" class="mt-2 d-flex flex-wrap gap-1"></div>
                         </div>
                     </div>

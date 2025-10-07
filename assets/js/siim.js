@@ -299,7 +299,7 @@ function resolveOaeName(p, idx){
 function renderOAEs(fc){
     if(!fc || !fc.features || !fc.features.length) return;
 
-    // 1) Descobre os tipos presentes para montar o filtro
+    // 1) tipos presentes
     var presentTypes = {};
     fc.features.forEach(function(f){
         var t = (f.properties && (f.properties.oae_type || f.properties.type)) || 'Sem tipo';
@@ -307,38 +307,23 @@ function renderOAEs(fc){
     });
     buildTypeFilter(Object.keys(presentTypes).sort());
 
-    // 2) Limpa estruturas
+    // 2) limpa estruturas
     oaeLayers = [];
     typePolylines = {};
-    let namesSeen = {}; // garante nome único
 
-    // 3) Desenha cada OAE
+    // 3) desenha cada OAE
     fc.features.forEach(function(f, idx){
         if(!f.geometry || f.geometry.type!=='LineString') return;
 
-        // coords
         var coords = f.geometry.coordinates.map(function(x){ return {lat:x[1], lng:x[0]}; });
 
-        // props
         const p = f.properties || {};
         var oaeName = resolveOaeName(p, idx);
         var oaeType = (p.oae_type || p.type) || 'Sem tipo';
 
-        // evita nomes repetidos: Nome, Nome (#2), Nome (#3)...
-        if (namesSeen[oaeName]) {
-            namesSeen[oaeName] += 1;
-            oaeName = `${oaeName} (#${namesSeen[oaeName]})`;
-        } else {
-            namesSeen[oaeName] = 1;
-        }
-
-        // path base invisível (mantém o traçado "fino" original)
         var rawPl = new google.maps.Polyline({ path: coords, strokeOpacity:0, map:null });
-
-        // gera a cápsula (polígono arredondado) a partir do traçado
         var capsulePath = buildCapsuleFromPath(rawPl.getPath(), OAE_BUFFER_M);
 
-        // polígono roxo translúcido (estilo base)
         var pl = new google.maps.Polygon({
             paths: capsulePath,
             strokeColor: OAE_STYLE.strokeColor,
@@ -350,29 +335,26 @@ function renderOAEs(fc){
             map: (layersEnabled.oaes && typeState[oaeType]!==false) ? map : null
         });
 
-        // metadados da OAE
         pl.__id      = polyIdSeq++;
-        pl.__oaeName = oaeName;
+        pl.__oaeName = oaeName;     // <- agora SEM “(#2)”
         pl.__oaeType = oaeType;
-        pl.__rawPath = rawPl.getPath(); // guarda o traçado original
-        pl.__props   = p;               // guarda as propriedades originais (p/ popup)
+        pl.__rawPath = rawPl.getPath();
+        pl.__props   = p;
 
-        // agrupa por tipo
         if(!typePolylines[oaeType]) typePolylines[oaeType] = [];
         typePolylines[oaeType].push(pl);
         oaeLayers.push(pl);
 
-        // clique: seleciona a OAE e abre o painel
-        // (o pop-up completo é aberto depois, quando as lentidões forem calculadas)
         pl.addListener('click', function(){
             addOAEByPolyline(pl, true);
             openPanel();
         });
     });
 
-    // 4) atualiza sugestões do campo de busca
+    // 4) atualiza sugestões
     fillOaeSuggestions();
 }
+
 
 
 function getPolylinesByName(name){ return oaeLayers.filter(pl => pl.__oaeName === name); }
@@ -479,6 +461,16 @@ function fillOaeSuggestions(){
     var dl=document.getElementById('oaes-list'); if(!dl) return;
     dl.innerHTML='';
     allOaeNames.forEach(function(n){ var o=document.createElement('option'); o.value=n; dl.appendChild(o); });
+
+    // === AJUSTE: popular o datalist do modal de regra ===
+    var dlRule = document.getElementById('rule-oaes-datalist');
+    if (dlRule){
+        dlRule.innerHTML = '';
+        allOaeNames.forEach(function(n){
+            var o=document.createElement('option'); o.value=n; dlRule.appendChild(o);
+        });
+    }
+    // === /AJUSTE ===
 
     var btnClear = document.getElementById('oae-clear');
     if (btnClear && !btnClear.__wired){ btnClear.__wired = true; btnClear.addEventListener('click', clearOaeFilter); }
@@ -994,7 +986,16 @@ function openRuleModal(id){
         chips.appendChild(sp);
     }
     (r.escopo.oaeNames||[]).forEach(addChip);
+
     const inOae = document.getElementById('rule-oae-input');
+
+    // quando escolher uma opção do datalist (ou digitar e mudar), vira chip
+    inOae.onchange = function(){
+        const v = (this.value||'').trim();
+        if (!v) return;
+        if (allOaeNames.includes(v)) { addChip(v); this.value=''; }
+    };
+    // Enter também adiciona
     inOae.onkeydown = function(e){
         if(e.key==='Enter'){ e.preventDefault();
             const v=this.value.trim(); if(v){ addChip(v); this.value=''; }
